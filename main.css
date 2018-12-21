@@ -1,0 +1,106 @@
+html, body {
+    margin: 0;
+    background: #dedede;
+}
+
+header {
+    font-family: monospace;
+    background: black;
+    color: white;
+}
+
+body > header {
+    font-size: 16px;
+    background: url('./assets/tatlogo.png') black 8px center no-repeat;
+    background-size: 40px 40px;
+    display: flex;
+    align-items: center;
+
+    min-height: 34px;
+    padding: 8px 12px 8px 56px;
+}
+
+main {
+    font-family: sans-serif;
+    padding: 20px;
+}
+
+section {
+    background: white;
+    margin-bottom: 32px;
+}
+
+section > header {
+    padding: 12px 12px 12px 50px;
+    font-size: 115%;
+    position: relative;
+}
+
+section > header > img {
+    display: block;
+    position: absolute;
+    top: 20%;
+    left: 12px;
+    height: 60%;
+}
+
+section > div {
+    padding: 12px;
+}
+
+
+.button {
+    display: inline-block;
+    background: #6d8ca6;
+    color: white;
+    font-weight: bold;
+    font-size: 85%;
+    padding: 16px;
+    box-shadow: 3px 3px 7px 0px rgba(0,0,0,0.2);
+    text-decoration: none;
+    transition: background 0.3s;
+}
+
+.button:hover {
+    background: #597a95;
+}
+
+a.button, a.button:link, a.button:visited, a.button:active {
+    color: white;
+}
+
+.status {
+    border-left: 4px solid black;
+    padding-left: 8px;
+}
+.status.error {
+    color: #c93e3e;
+    border-color: #c93e3e;
+}
+.ok {
+    color: #3b922a;
+    border-color: #3b922a;
+}
+
+code {
+    background: black;
+    padding: 2px 5px;
+    border-radius: 4px;
+    color: #ddd;
+}
+
+label {
+    display: block;
+    padding-bottom: 12px;
+}
+label div {
+    display: block;
+    font-size: 80%;
+}
+
+input {
+    display: block;
+    margin-right: 16px;
+    padding: 6px;
+    font-size: 14px;
+}
