@@ -1,6 +1,6 @@
 <?php
 require_once( 'functions.php' );
-$noConfigInstructions = 'Copy <code>config-sample.json</code> as <code>config.json</code> on the server and replace the sample values with real ones.';
+
 /*
 https://tatproxy.ransomchristofferson.com/util/sf_auth.php
 https://macd3070.lasp.colorado.edu/~christof/util/sf_auth.php
@@ -44,47 +44,15 @@ https://localhost/tatproxy/sf_auth.php
 	<section>
 		<header><img src="assets/sf-icon.png"> Salesforce authentication</header>
 		<div>
-			<?php
-
-			$sfConfigInstructions = 'The salesforce connection vlaues must match the values given for the Connected App titled "TAT Mobile App". '
-				. 'This can be found in the <a href="https://success.salesforce.com/answers?id=9063A000000DbnVQAS" target="_blank">App Manager</a>.';
-			$sfAuthInstructions = 'A read-only account is ideal. The account only needs read-access to the TAT app user data.'
-				. '<br><b>Do NOT authenticate with an admin account.</b>';
-
-			$messages = [
-				1 => [
-					'error' => 'No config file found.',
-					'instructions' => $noConfigInstructions . '<br><br>' . $sfConfigInstructions
-				],
-				2 => [
-					'error' => 'Salesforce API access credentials not defined.',
-					'instructions' => 'Edit <code>config.json</code> and define a callback URL, consumer secret, and consumer key. ' . $sfConfigInstructions
-				],
-				3 => [
-					'error' => 'Proxy hasn\'t been authenticated.',
-					'instructions' => 'Please authenticate using a Salesforce account with restricted privileges. ' . $sfAuthInstructions
-				],
-				4 => [
-					'error' => 'Authentication is invalid or has expired.',
-					'instructions' => 'Please re-authenticate using a Salesforce account with restricted privileges. ' . $sfAuthInstructions
-				],
-				5 => [
-					'error' => 'Unexpected error.',
-					'instructions' => ''
-				]
-			];
-
-			$sfStatus = getSFStatus();
-			?>
-
-			<?php if ( $sfStatus === 0 ): ?>
-			<p class="status ok">Connected</p>
+			<?php $sfStatus = getSFStatus() ?>
+			<?php if ( $sfStatus['error'] ) : ?>
+				<p class="status error">Failed to connect to Salesforce.<br><i><?php echo $sfStatus['error'] ?></i></p>
+				<p><?php echo $sfStatus['instructions'] ?></p>
 			<?php else: ?>
-			<p class="status error">Failed to connect to Salesforce.<br><i><?php echo $messages[$sfStatus]['error'] ?></i></p>
-			<p><?php echo $messages[$sfStatus]['instructions'] ?></p>
+				<p class="status ok">Connected.</p>
 			<?php endif; ?>
 
-			<?php if ( $sfStatus === 3 || $sfStatus === 4 ): ?>
+			<?php if ( $sfStatus['code'] === 3 || $sfStatus['code'] === 4 ): ?>
 				<?php
 				/**
 				 * Show a button to authenticate with a salesforce user. Upon successful auth, we get a token
@@ -94,10 +62,11 @@ https://localhost/tatproxy/sf_auth.php
 				 */
 				
 				$config = getConfig();
-				$url = 'https://login.salesforce.com/services/oauth2/authorize?'
-					. 'response_type=code'
-					. '&client_id=' . urlencode( $config->salesforce->consumerKey )
-					. '&redirect_uri=' . urlencode( $config->salesforce->authSuccessURL );
+				$url = 'https://login.salesforce.com/services/oauth2/authorize?' . http_build_query( array(
+					'response_type' => 'code',
+					'client_id'		=> $config->salesforce->consumerKey,
+					'redirect_uri'  => $config->salesforce->authSuccessURL
+				));
 				?>
 
 				<a href="<?php echo $url ?>" class="button">Authenticate this proxy</a>
@@ -109,41 +78,13 @@ https://localhost/tatproxy/sf_auth.php
 	<section>
 		<header><img src="assets/db-icon.png"> App user database</header>
 		<div>
-			<?php
-
-			$messages = [
-				1 => [
-					'error' => 'No config file found.',
-					'instructions' => $noConfigInstructions
-				],
-				2 => [
-					'error' => 'Database access credentials not defined.',
-					'instructions' => 'Edit <code>config.json</code> and define a username, password, and database name for the MySQL connection.'
-				],
-				3 => [
-					'error' => 'MySQL service unavailable.',
-					'instructions' => ''
-				],
-				4 => [
-					'error' => 'Database access credentials are invalid.',
-					'instructions' => 'Ensure that the MySQL connection credentials in <code>config.json</code> are correct, and that the defined database exists.'
-				],
-				5 => [
-					'error' => 'Unexpected error.',
-					'instructions' => ''
-				]
-			];
-
-			$dbStatus = getDBStatus();
-			?>
-
-			<?php if ( $dbStatus === 0 ): ?>
-			<p class="status ok">Connected</p>
+			<?php $dbStatus = getDBStatus() ?>
+			<?php if ( $dbStatus['error'] ) : ?>
+				<p class="status error">Failed to connect to database.<br><i><?php echo $dbStatus['error'] ?></i></p>
+				<p><?php echo $dbStatus['instructions'] ?></p>
 			<?php else: ?>
-			<p class="status error">Failed to connect to database.<br><i><?php echo $messages[$dbStatus]['error'] ?></i></p>
-			<p><?php echo $messages[$dbStatus]['instructions'] ?></p>
+				<p class="status ok">Connected.</p>
 			<?php endif; ?>
-
 		</div>
 	</section>
 </main>

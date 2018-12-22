@@ -1,12 +1,97 @@
 <?php
-require_once( __DIR__ . '../functions.php' );
+// After the user has authenticated the proxy app with salesforce,
+// salesforce redirects the user to this page, with a GET parameter
+// in the request named 'code'.
+// We can include 'code' in a request to salesforce to retrieve an
+// access token (which is used as authentication) and a refresh token
+// (which is used to get new access tokens)
+// This page follows the flow on
+// https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/intro_understanding_web_server_oauth_flow.htm
 
-// if there are no database access credentials, or the credentials are invalid,
-// change the credentials to those in the POST request.
-$dbStatus = getDBStatus();
-if ( $dbStatus === 2 || $dbStatus === 3 ) {
-    
+require_once( __DIR__ . '/../functions.php' );
 
-} else {
-    echo 'Credentials already provided.';
+/** Hides the loading thinger, shows a message, closes out the HTML, and stops execution of the PHP script. */
+function doneExit( $message = '' ) {
+    ?>
+    <script>document.querySelector('.loading').style.display = 'none';</script>
+    <p><?php echo $message ?></p>
+    </main></body></html>
+    <?php
+	exit;
 }
+
+?><!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>TAT mobile app / Salesforce communication proxy</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" type="text/css" media="screen" href="../main.css" />
+</head>
+
+<body>
+<header>TAT mobile app / Salesforce communication proxy</header>
+<main>
+    <div class="loading">
+        <p>Connecting to Salesforce...</p>
+        <div class="lds-circle"><div></div></div>
+    </div>
+
+    <?php
+    ob_flush();
+    flush();
+
+    if ( !isset($_GET['code']) ) {
+        doneExit( 'Error: GET parameter \'code\' expected but not present' );
+    }
+    
+    // The 'code' expires after 15 minutes. Use it now to get access and refresh tokens.
+    $config = getConfig();
+    $_GET['code'];
+    $response = post( 'https://login.salesforce.com/services/oauth2/token', array(
+        'grant_type'    => 'authorization_code',
+        'client_secret' => $config->salesforce->consumerSecret,
+        'client_id'     => $config->salesforce->consumerKey,
+        'redirect_uri'  => $config->salesforce->authSuccessURL,
+        'code'          => $_GET['code']
+    ));
+
+    if ( $response === false ) {
+        doneExit( 'Error: Could not retrieve access token from Salesforce.' );
+    }
+    if ( $response['httpCode'] !== 200 ) {
+        // Show the error from Salesforce
+        ?>
+        <p>Could not retrieve access token from Salesforce.</p><p>Response from Salesforce:</p>
+        <pre>HTTP response code: <?php echo $response['httpCode'] ?></pre>
+        <pre><?php echo htmlspecialchars( $response['content'] ) ?></pre>
+        <?php
+        doneExit();
+    }
+
+    // Check the response for the expected parameters.
+    $sfResponse = json_decode( $response['content'] );
+    if (
+        !isset($sfResponse->access_token) || empty($sfResponse->access_token) ||
+        !isset($sfResponse->refresh_token) || empty($sfResponse->refresh_token) ||
+        !isset($sfResponse->instance_url) || empty($sfResponse->instance_url)
+    ) {
+        doneExit( 'Error: The response from Salesforce did not contain access_token, refresh_token, or instance_url' );
+    }
+
+    // Now we have the needed data to be able to connect. Save the response as-is to a file.
+    if ( !file_put_contents('../sf-auth.json', $response['content']) ) {
+        doneExit( 'Error: Could not write authentication data to disk. Check folder permissions on the server.' );
+    }
+
+    // Test the credentials in a request to the API
+    // @@
+
+    // Show a success message
+    ?><script>setTimeout( function() { window.location = window.location.pathname + '/../../' }, 5000 )</script><?php
+    doneExit( 'Successfully connected to Salesforce. Redirecting you shortly...' );
+    ?>
+</main>
+</body>
+</html>
