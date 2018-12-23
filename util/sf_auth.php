@@ -57,8 +57,8 @@ function doneExit( $message = '' ) {
         'code'          => $_GET['code']
     ));
 
-    if ( $response === false ) {
-        doneExit( 'Error: Could not retrieve access token from Salesforce.' );
+    if ( $response['error'] ) {
+        doneExit( 'Error: Could not retrieve access token from Salesforce. ' . $response['error'] );
     }
     if ( $response['httpCode'] !== 200 ) {
         // Show the error from Salesforce
@@ -74,19 +74,39 @@ function doneExit( $message = '' ) {
     $sfResponse = json_decode( $response['content'] );
     if (
         !isset($sfResponse->access_token) || empty($sfResponse->access_token) ||
-        !isset($sfResponse->refresh_token) || empty($sfResponse->refresh_token) ||
+        // I think the refresh_token is only needed if "Configure ID Token" is checked in the Salesforce Connected App settings?
+        // !isset($sfResponse->refresh_token) || empty($sfResponse->refresh_token) ||
         !isset($sfResponse->instance_url) || empty($sfResponse->instance_url)
     ) {
-        doneExit( 'Error: The response from Salesforce did not contain access_token, refresh_token, or instance_url' );
+        // Show the response from Salesforce
+        ?>
+        <p>Error: The response from Salesforce did not contain access_token<!--, refresh_token, --> and instance_url.</p><p>Response from Salesforce:</p>
+        <pre><?php echo htmlspecialchars( $response['content'] ) ?></pre>
+        <?php
+        doneExit();
     }
 
     // Now we have the needed data to be able to connect. Save the response as-is to a file.
     if ( !file_put_contents('../sf-auth.json', $response['content']) ) {
         doneExit( 'Error: Could not write authentication data to disk. Check folder permissions on the server.' );
     }
+    // set the sfAuth content so it's set to the new data when the API is called
+    $sfAuth = json_decode( $response['content'] );
 
     // Test the credentials in a request to the API
-    // @@
+    $apiResponse = apiGet( '' );
+    if ( $apiResponse['error'] ) {
+        doneExit( 'Error: failed to make a requst to the API. ' . $apiResponse['error'] );
+    }
+    if ( $apiResponse['httpCode'] !== 200 ) {
+        // Show the response from Salesforce
+        ?>
+        <p>Error making an API call to Salesforce.</p><p>Response from Salesforce:</p>
+        <pre>HTTP response code: <?php echo $apiResponse['httpCode'] ?></pre>
+        <pre><?php echo htmlspecialchars( json_encode($apiResponse['content']) ) ?></pre>
+        <?php
+        doneExit();
+    }
 
     // Show a success message
     ?><script>setTimeout( function() { window.location = window.location.pathname + '/../../' }, 5000 )</script><?php

@@ -4,7 +4,7 @@ require_once( 'functions.php' );
 /*
 https://tatproxy.ransomchristofferson.com/util/sf_auth.php
 https://macd3070.lasp.colorado.edu/~christof/util/sf_auth.php
-https://localhost/tatproxy/sf_auth.php
+https://localhost/tatproxy/util/sf_auth.php
 */
 
 ?><!DOCTYPE html>
@@ -87,6 +87,10 @@ https://localhost/tatproxy/sf_auth.php
 			<?php endif; ?>
 		</div>
 	</section>
+
+	<hr>
+	<h1>Usage</h1>
+
 </main>
 </body>
 </html>
