@@ -42,12 +42,15 @@ https://localhost/tatproxy/util/sf_auth.php
 	<h1>Status</h1>
 
 	<section>
-		<header><img src="assets/sf-icon.png"> Salesforce authentication</header>
+		<header><img src="assets/salesforce-icon.png"> Salesforce authentication</header>
 		<div>
 			<?php $sfStatus = getSFStatus() ?>
 			<?php if ( $sfStatus['error'] ) : ?>
 				<p class="status error">Failed to connect to Salesforce.<br><i><?php echo $sfStatus['error'] ?></i></p>
 				<p><?php echo $sfStatus['instructions'] ?></p>
+				<?php if ( isset($sfStatus['errorDetails']) ): ?>
+					<pre><?php echo htmlspecialchars( json_encode($sfStatus['errorDetails']) ) ?></pre>
+				<?php endif; ?>
 			<?php else: ?>
 				<p class="status ok">Connected.</p>
 			<?php endif; ?>
@@ -72,6 +75,13 @@ https://localhost/tatproxy/util/sf_auth.php
 				<a href="<?php echo $url ?>" class="button">Authenticate this proxy</a>
 
 			<?php endif; ?>
+		</div>
+	</section>
+
+	<section>
+		<header><img src="assets/firebase-icon.png"> Firebase connection</header>
+		<div>
+			
 		</div>
 	</section>
 

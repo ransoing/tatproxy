@@ -142,6 +142,7 @@ $sfStatuses = [
 function getSFStatus() {
 	$config = getConfig();
 	global $sfStatuses;
+	unset( $sfStatuses[5]['errorDetails'] );
 
 	// check whether salesforce connection config exists
 	if ( empty($config) || empty($config->salesforce) ) {
@@ -161,6 +162,7 @@ function getSFStatus() {
 	// check whether the auth key works
 	$apiResponse = apiGet( '' );
 	if ( $apiResponse['error'] ) {
+		$sfStatuses[5]['errorDetails'] = $apiResponse;
 		return $sfStatuses[5];
 	}
 	if ( $apiResponse['httpCode'] !== 200 ) {
