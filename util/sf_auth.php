@@ -93,7 +93,7 @@ function doneExit( $message = '' ) {
     $sfAuth = json_decode( $response['content'] );
 
     // Test the credentials in a request to the API
-    $apiResponse = apiGet( '' );
+    $apiResponse = salesforceAPIGet( '' );
     if ( $apiResponse['error'] ) {
         doneExit( 'Error: failed to make a requst to the API. ' . $apiResponse['error'] );
     }

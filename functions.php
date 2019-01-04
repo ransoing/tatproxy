@@ -4,9 +4,9 @@ $sfAuth = null;
 
 $noConfigInstructions = 'Copy <code>config-sample.json</code> as <code>config.json</code> on the server and replace the sample values with real ones.';
 
-
-// Database connectivity statuses and error messages
-$dbStatuses = [
+// Statuses for firebase connection
+$fbConfigInstructions = 'The API key can be found in the Firebase console, by clicking the "Web setup" button.';
+$fbStatuses = [
 	0 => [
 		'code' => 0,
 		'error' => false
@@ -18,83 +18,55 @@ $dbStatuses = [
 	],
 	2 => [
 		'code' => 2,
-		'error' => 'Database access credentials not defined.',
-		'instructions' => 'Edit <code>config.json</code> and define a username, password, and database name for the MySQL connection.'
+		'error' => 'Firebase API key not defined.',
+		'instructions' => 'Edit <code>config.json</code> on the server and add the Firebase API key (see <code>config-sample.json</code> for proper formatting). ' . $fbConfigInstructions
 	],
 	3 => [
 		'code' => 3,
-		'error' => 'MySQL service unavailable.',
-		'instructions' => ''
+		'error' => 'Invalid Firebase API key.',
+		'instructions' => 'Edit <code>config.json</code> on the server and replace the Firebase API key with a valid one. ' . $fbConfigInstructions
 	],
 	4 => [
 		'code' => 4,
-		'error' => 'Database access credentials are invalid.',
-		'instructions' => 'Ensure that the MySQL connection credentials in <code>config.json</code> are correct, '
-			. 'and that the defined database exists. When creating the user in MySQL, you may need to explicitly '
-			. 'set the hostname to <code>localhost</code> rather than <code>%</code>.'
-	],
-	5 => [
-		'code' => 5,
-		'error' => 'Insufficient privileges to edit database tables.',
-		'instructions' => ''
-	],
-	6 => [
-		'code' => 6,
 		'error' => 'Unexpected error.',
 		'instructions' => ''
 	]
 ];
 
 /**
- * Gets the status of the connectivity to the database.
- * Returns an associative array with keys 'error' and 'instructions'.
+ * Gets the status of the connectivity to firebase.
+ * Returns an associative array with keys 'error', 'instructions', 'code', and 'errorDetails' (for some errors).
  */
-function getDBStatus() {
+function getFirebaseStatus() {
 	$config = getConfig();
-	global $dbStatuses;
+	global $fbStatuses;
+	unset( $fbStatuses[4]['errorDetails'] );
 
-	if ( empty($config) || empty($config->mysql) ) {
-		return $dbStatuses[1];
-	}
-	$db = $config->mysql;
-	if ( empty($db->username) || empty($db->password) || empty($db->databaseName) ) {
-		return $dbStatuses[2];
-	}
-	// test the connection to the mysql db, which contains user login data.
-	@$mysqli = new mysqli( 'localhost', $db->username, $db->password, $db->databaseName );
-	if ( !$mysqli->connect_errno ) {
-		// check if the expected table exists
-		$tables = $mysqli->query( "SHOW TABLES LIKE 'users'" );
-		if ( $tables->num_rows === 0 ) {
-			// attempt to create the table
-			$madeTable = $mysqli->query( "CREATE TABLE `".$db->databaseName."`.`users` ( "
-				. "`id` INT UNSIGNED NOT NULL AUTO_INCREMENT , "
-				. "`salesforce_link` VARCHAR(50) NULL , "
-				. "`auth_email` VARCHAR(100) NOT NULL , "
-				. "`auth_token` VARCHAR(50) NOT NULL , "
-				. "PRIMARY KEY (`id`)) ENGINE = InnoDB;"
-			);
-			if ( !$madeTable ) {
-				return $dbStatuses[5];
-			}
+	// check whether firebase connection config exists
+	if ( empty($config) ) { return $fbStatuses[1]; }
+	// check whether crucial info is defined in the config
+	if ( empty($config->firebase) || empty($config->firebase->apiKey) ) { return $fbStatuses[2]; }
+	// make a call to firebase to see if the key is valid
+	$apiResponse = firebaseAPIPost( 'getAccountInfo', array('idToken'=>'intentionallyBogus') );
+
+	if ( !$apiResponse['error'] && isset($apiResponse['content']) ) {
+		// in the response content, expect a specific error regarding a bad ID token (because we don't have one right now).
+		// Any other error indicates something wrong with the configuration.
+		// check for indications of a bad API key.
+		if ( @$apiResponse['content']->error->status === 'INVALID_ARGUMENT' ) {
+			return $fbStatuses[3];
 		}
+		// check for indications of a bad ID token (which implies a good API key)
+		if ( $apiResponse['content']->error->message === 'INVALID_ID_TOKEN' ) {
+			return $fbStatuses[0];
+		}
+	}
 
-		return $dbStatuses[0];
-	}
-	switch( $mysqli->connect_errno ) {
-		case 2002:
-			return $dbStatuses[3];
-			break;
-		case 1227:
-		case 1698:
-		case 1044:
-		case 1045:
-			return $dbStatuses[4];
-			break;
-		default:
-			return $dbStatuses[6];
-	}
+	// unexpected error found. Return the whole response as error details.
+	$fbStatuses[4]['errorDetails'] = $apiResponse;
+	return $fbStatuses[4];
 }
+
 
 
 // salesforce connectivity statuses and error messages
@@ -116,7 +88,7 @@ $sfStatuses = [
 	2 => [
 		'code' => 2,
 		'error' => 'Salesforce API access credentials not defined.',
-		'instructions' => 'Edit <code>config.json</code> and define a callback URL, consumer secret, and consumer key. ' . $sfConfigInstructions
+		'instructions' => 'Edit <code>config.json</code> on the server and define a callback URL, consumer secret, and consumer key (see <code>config-sample.json</code> for proper formatting). ' . $sfConfigInstructions
 	],
 	3 => [
 		'code' => 3,
@@ -137,18 +109,17 @@ $sfStatuses = [
 
 /**
  * Gets the status of the connectivity to salesforce.
- * Returns an associative array with keys 'error' and 'instructions'.
+ * Returns an associative array with keys 'error', 'instructions', 'code', and 'errorDetails' (for some errors).
  */
-function getSFStatus() {
+function getSalesforceStatus() {
 	$config = getConfig();
 	global $sfStatuses;
 	unset( $sfStatuses[5]['errorDetails'] );
 
 	// check whether salesforce connection config exists
-	if ( empty($config) || empty($config->salesforce) ) {
-		return $sfStatuses[1];
-	}
+	if ( empty($config) ) { return $sfStatuses[1]; }
 	// check whether crucial info is defined in the config
+	if ( empty($config->salesforce) ) { return $sfStatuses[2]; }
 	$sf = $config->salesforce;
 	if ( empty($sf->authSuccessURL) || empty($sf->consumerSecret) || empty($sf->consumerKey) || empty($sf->APIName) ) {
 		return $sfStatuses[2];
@@ -159,7 +130,7 @@ function getSFStatus() {
 		return $sfStatuses[3];
 	}
 	// check whether the auth key works
-	$apiResponse = apiGet( '' );
+	$apiResponse = salesforceAPIGet( '' );
 	if ( $apiResponse['error'] ) {
 		$sfStatuses[5]['errorDetails'] = $apiResponse;
 		return $sfStatuses[5];
@@ -215,15 +186,7 @@ function curlExecAndFormat( $curlHandler ) {
  * Returns an array with 'error' on error, or an array with 'httpCode' and 'content'.
  */
 function post( $url, $data ) {
-	// use cURL to make the request, so we can get the response content when the response is not 200
-	/*
-	// test response
-	sleep( 1 );
-	return array(
-		'httpCode' => 200,
-		'content' => '{"id":"https://login.salesforce.com/id/00Dx0000000BV7z/005x00000012Q9P","issued_at":"1278448101416","refresh_token":"5Aep8614iLM.Dq661ePDmPEgaAW9Oh_L3JKkDpB4xReb54_pZebnUG0h6Sb4KUVDpNtWEofWM39yg==","instance_url":"https://na78.salesforce.com/","signature":"CMJ4l+CCaPQiKjoOEwEig9H4wqhpuLSk4J2urAe+fVg=","access_token":"00Dx0000000BV7z!AR8AQP0jITN80ESEsj5EbaZTFG0RNBaT1cyWk7TrqoDjoNIWQ2ME_sTZzBjfmOE6zMHq6y8PIW4eWze9JksNEkWUl.Cju7m4"}'
-	);
-	*/
+	// use cURL to make the request (as opposed to file_get_contents), so we can get the response content when the response is not 200
 
 	// Create a connection
 	$ch = curl_init( $url );
@@ -237,10 +200,29 @@ function post( $url, $data ) {
 }
 
 /**
+ * Makes a POST request to the firebase API and returns an assoc array with 'httpCode' and 'content'.
+ * Returns an array with 'error' if the request fails or if the response (expected to be json-formatted) cannot be parsed.
+ */
+function firebaseAPIPost( $urlSegment, $data = array() ) {
+	$config = getConfig();
+	// build the URL, with the API key appended
+	$url = 'https://www.googleapis.com/identitytoolkit/v3/relyingparty/' . $urlSegment . '?key=' . $config->firebase->apiKey;
+	$response = post( $url, $data );
+	
+	// parse json
+	$response['content'] = json_decode( $response['content'] );
+	if ( $response['content'] === null ) {
+		return array( 'error' => 'Malformed json.' );
+	}
+
+	return $response;
+}
+
+/**
  * Makes a GET request to the salesforce API and returns an assoc array with 'httpCode' and 'content'.
  * Returns an array with 'error' if the request fails or if the response (expected to be json-formatted) cannot be parsed.
  */
-function apiGet( $urlSegment, $data = array(), $allowRefreshAuthToken = true ) {
+function salesforceAPIGet( $urlSegment, $data = array(), $allowRefreshAuthToken = true ) {
 	$sfAuth = getSFAuth();
 	$url = $sfAuth->instance_url . '/services/data/v44.0/' . $urlSegment . '.json?' . http_build_query( $data );
 	$ch = curl_init( $url );
@@ -285,7 +267,7 @@ function apiGet( $urlSegment, $data = array(), $allowRefreshAuthToken = true ) {
 			$sfAuth->access_token = json_decode( $refreshResponse['content'] )->access_token;
 			file_put_contents( './sf-auth.json', json_encode($sfAuth) );
 			// try the call to the API again
-			return apiGet( $urlSegment, $data, false );
+			return salesforceAPIGet( $urlSegment, $data, false );
 		}
 	}
 

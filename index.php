@@ -1,12 +1,6 @@
 <?php
 require_once( 'functions.php' );
 
-/*
-https://tatproxy.ransomchristofferson.com/util/sf_auth.php
-https://macd3070.lasp.colorado.edu/~christof/util/sf_auth.php
-https://localhost/tatproxy/util/sf_auth.php
-*/
-
 ?><!DOCTYPE html>
 <html>
 <head>
@@ -26,16 +20,16 @@ https://localhost/tatproxy/util/sf_auth.php
 		The mobile app uses this data stored in Salesforce. However, the mobile app does not
 		directly communicate with Salesforce&mdash;it communicates with this <em>proxy</em> instead.
 		This proxy is given authorization to read any data from Salesforce. Users of the TAT app
-		authenticate against this proxy, and the proxy filters data from Salesforce so that each
+		authenticate with a separate service (Firebase), and the proxy filters data from Salesforce so that each
 		user can only access his/her data.
 	</p>
 	<p>
 		This gives the benefit of only requiring one Salesforce account for all users of the app, and keeps
-		app user management separate from Salesforce user management.
+		app user management separate from Salesforce user management (for TAT staff).
 	</p>
 	<p>
-		Users of the app authenticate with third-party authentication providers. This proxy stores essential
-		data in a MySQL database to enable this.
+		Users of the app authenticate with Firebase. The app passes their Firebase ID token to the proxy, and the proxy
+		confirms with Firebase that the user is logged in, before giving the user their Salesforce data.
 	</p>
 	<hr>
 
@@ -44,7 +38,7 @@ https://localhost/tatproxy/util/sf_auth.php
 	<section>
 		<header><img src="assets/salesforce-icon.png"> Salesforce authentication</header>
 		<div>
-			<?php $sfStatus = getSFStatus() ?>
+			<?php $sfStatus = getSalesforceStatus() ?>
 			<?php if ( $sfStatus['error'] ) : ?>
 				<p class="status error">Failed to connect to Salesforce.<br><i><?php echo $sfStatus['error'] ?></i></p>
 				<p><?php echo $sfStatus['instructions'] ?></p>
@@ -81,17 +75,13 @@ https://localhost/tatproxy/util/sf_auth.php
 	<section>
 		<header><img src="assets/firebase-icon.png"> Firebase connection</header>
 		<div>
-			
-		</div>
-	</section>
-
-	<section>
-		<header><img src="assets/db-icon.png"> App user database</header>
-		<div>
-			<?php $dbStatus = getDBStatus() ?>
-			<?php if ( $dbStatus['error'] ) : ?>
-				<p class="status error">Failed to connect to database.<br><i><?php echo $dbStatus['error'] ?></i></p>
-				<p><?php echo $dbStatus['instructions'] ?></p>
+			<?php $fbStatus = getFirebaseStatus() ?>
+			<?php if ( $fbStatus['error'] ) : ?>
+				<p class="status error">Failed to connect to Firebase.<br><i><?php echo $fbStatus['error'] ?></i></p>
+				<p><?php echo $fbStatus['instructions'] ?></p>
+				<?php if ( isset($fbStatus['errorDetails']) ): ?>
+					<pre><?php echo htmlspecialchars( json_encode($fbStatus['errorDetails']) ) ?></pre>
+				<?php endif; ?>
 			<?php else: ?>
 				<p class="status ok">Connected.</p>
 			<?php endif; ?>
@@ -100,7 +90,7 @@ https://localhost/tatproxy/util/sf_auth.php
 
 	<hr>
 	<h1>Usage</h1>
-
+	<p>Add API details here.</p>
 </main>
 </body>
 </html>
