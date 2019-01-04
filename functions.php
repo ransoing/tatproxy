@@ -155,8 +155,7 @@ function getSFStatus() {
 	}
 	// check whether the proxy has authentication data
 	$sfAuth = getSFAuth();
-	// refresh_token may only be needed if "Configure ID Token" is checked in the Salesforce Connected App settings?
-	if ( empty($sfAuth) || /* empty($sfAuth->refresh_token) || */ empty($sfAuth->instance_url) || empty($sfAuth->access_token) ) {
+	if ( empty($sfAuth) || empty($sfAuth->refresh_token) || empty($sfAuth->instance_url) || empty($sfAuth->access_token) ) {
 		return $sfStatuses[3];
 	}
 	// check whether the auth key works
@@ -241,20 +240,54 @@ function post( $url, $data ) {
  * Makes a GET request to the salesforce API and returns an assoc array with 'httpCode' and 'content'.
  * Returns an array with 'error' if the request fails or if the response (expected to be json-formatted) cannot be parsed.
  */
-function apiGet( $urlSegment, $data = array() ) {
+function apiGet( $urlSegment, $data = array(), $allowRefreshAuthToken = true ) {
 	$sfAuth = getSFAuth();
 	$url = $sfAuth->instance_url . '/services/data/v44.0/' . $urlSegment . '.json?' . http_build_query( $data );
 	$ch = curl_init( $url );
+	
 	// add access token to header
 	curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Authorization: Bearer ' . $sfAuth->access_token) );
 	$response = curlExecAndFormat( $ch );
 	if ( $response['error'] ) {
 		return $response;
 	}
+
 	// parse json
 	$response['content'] = json_decode( $response['content'] );
 	if ( $response['content'] === null ) {
 		return array( 'error' => 'Malformed json.' );
 	}
+
+	// check if the auth token has expired so we can refresh it
+	if (
+		$allowRefreshAuthToken &&
+		$response['httpCode'] === 401 &&
+		isset($response['content'][0]) &&
+		isset($response['content'][0]->errorCode) &&
+		$response['content'][0]->errorCode === 'INVALID_SESSION_ID'
+	) {
+		// get a new auth token using the refresh token
+		$config = getConfig();
+		
+		$refreshResponse = post( 'https://login.salesforce.com/services/oauth2/token', array(
+			'grant_type'	=> 'refresh_token',
+			'refresh_token'	=> $sfAuth->refresh_token,
+			'client_id'     => $config->salesforce->consumerKey,
+			'client_secret' => $config->salesforce->consumerSecret,
+			'format'		=> 'json'
+		));
+		if ( $refreshResponse['error'] || $refreshResponse['httpCode'] !== 200 ) {
+			// refresh token didn't work, so return the original response
+			return $response;
+		} else {
+			// save the new access token to disk and to the global variable
+			global $sfAuth;
+			$sfAuth->access_token = json_decode( $refreshResponse['content'] )->access_token;
+			file_put_contents( './sf-auth.json', json_encode($sfAuth) );
+			// try the call to the API again
+			return apiGet( $urlSegment, $data, false );
+		}
+	}
+
 	return $response;
 }

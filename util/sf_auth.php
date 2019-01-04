@@ -74,13 +74,12 @@ function doneExit( $message = '' ) {
     $sfResponse = json_decode( $response['content'] );
     if (
         !isset($sfResponse->access_token) || empty($sfResponse->access_token) ||
-        // I think the refresh_token is only needed if "Configure ID Token" is checked in the Salesforce Connected App settings?
-        // !isset($sfResponse->refresh_token) || empty($sfResponse->refresh_token) ||
+        !isset($sfResponse->refresh_token) || empty($sfResponse->refresh_token) ||
         !isset($sfResponse->instance_url) || empty($sfResponse->instance_url)
     ) {
         // Show the response from Salesforce
         ?>
-        <p>Error: The response from Salesforce did not contain access_token<!--, refresh_token, --> and instance_url.</p><p>Response from Salesforce:</p>
+        <p>Error: The response from Salesforce did not contain access_token, refresh_token, and instance_url.</p><p>Response from Salesforce:</p>
         <pre><?php echo htmlspecialchars( $response['content'] ) ?></pre>
         <?php
         doneExit();
