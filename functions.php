@@ -209,6 +209,8 @@ function firebaseAPIPost( $urlSegment, $data = array() ) {
 	$url = 'https://www.googleapis.com/identitytoolkit/v3/relyingparty/' . $urlSegment . '?key=' . $config->firebase->apiKey;
 	$response = post( $url, $data );
 	
+	if ( $response['error'] ) return $response;
+	
 	// parse json
 	$response['content'] = json_decode( $response['content'] );
 	if ( $response['content'] === null ) {

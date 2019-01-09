@@ -1,6 +1,6 @@
 {
     "salesforce": {
-        "authSuccessURL": "https://some-url.com/sf-login-callback.php",
+        "authSuccessURL": "https://some-url.com/util/sf-auth",
         "consumerSecret": "1234567890",
         "consumerKey": "ZVVx5sT9xOID1ZVVx5sT9xOID1ZVVx5sT9xOID1ZVVx5sT9xOID1ZVVx5sT9xOID1ZVVx5sT9xOID1",
         "APIName": "TAT_Mobile_App"

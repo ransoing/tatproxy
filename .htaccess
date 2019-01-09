@@ -1,0 +1,3 @@
+# Serve files with some extension when no extension is specified in the URL
+# For example, serve foo/bar.php when the URL is foo/bar
+Options +MultiViews

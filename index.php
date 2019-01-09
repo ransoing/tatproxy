@@ -25,7 +25,7 @@ require_once( 'functions.php' );
 	</p>
 	<p>
 		This gives the benefit of only requiring one Salesforce account for all users of the app, and keeps
-		app user management separate from Salesforce user management (for TAT staff).
+		app user management separate from Salesforce user management.
 	</p>
 	<p>
 		Users of the app authenticate with Firebase. The app passes their Firebase ID token to the proxy, and the proxy
