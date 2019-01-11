@@ -1,5 +1,11 @@
 <?php
 
+// To support CORS, return 200 for HEAD or OPTIONS requests.
+if ( $_SERVER['REQUEST_METHOD'] === 'HEAD' || $_SERVER['REQUEST_METHOD'] === 'OPTIONS' ) {
+    http_response_code( 200 );
+    exit;
+}
+
 function errorExit( $httpCode, $errorMessage ) {
     http_response_code( $httpCode );
     echo "{\"error\":\"${errorMessage}\"}";
