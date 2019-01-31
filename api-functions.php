@@ -37,3 +37,40 @@ function getPOSTData() {
         errorExit( 400, $headerError );
     }
 }
+
+// exit the script if the http request failed to execute, or if the response returned an http code other than 200.
+// Also echo an error message in json format.
+function exitIfResponseHasError( $response ) {
+    // $response['error'] will be set if there was an error with the curl request itself or with parsing the API's JSON response.
+    // $response['error'] is false only if the request completed successfully.
+    // if the API returned an error, then the httpCode will be something other than 200
+    if ( $response['error'] || $response['httpCode'] !== 200 ) {
+        // httpCode may or may not be set.
+        http_response_code( $response['httpCode'] ? $response['httpCode'] : 500 );
+        // ['error'] may have an error message. If not, the error message is contained in ['content'].
+        $errorResponse = (object)array( 'error' => $response['error'] ? $response['error'] : $response['content'] );
+        echo json_encode( $errorResponse );
+        exit;
+    }
+}
+
+// performs a SOQL query and returns all records. This may take several requests to the API.
+// i.e. getAllSalesforceQueryRecords( "SELECT Name from Contact WHERE Name LIKE 'S%' OR Name LIKE 'A%' OR Name LIKE 'R%'" )
+// No need to run exitIfResponseHasError --- this peforms that with each request.
+function getAllSalesforceQueryRecords( $query ) {
+    $response = salesforceAPIGet( 'query/', array('q' => $query) );
+    exitIfResponseHasError( $response );
+    $records = $response['content']->records;
+
+    while( !$response['content']->done ) {
+        // get the segment of the url after /vXX.X/
+        $nextRecordsUrl = $response['content']->nextRecordsUrl;
+        $urlSegment = substr( $nextRecordsUrl, strpos($nextRecordsUrl, 'query/') );
+        // make request for the next batch
+        $response = salesforceAPIGet( $urlSegment );
+        exitIfResponseHasError( $response );
+        // concat the new records with the ones we have so far
+        $records = array_merge( $records, $response['content']->records );
+    }
+    return $records;
+}
