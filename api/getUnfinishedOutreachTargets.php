@@ -2,64 +2,43 @@
 require_once( '../functions.php' );
 require_once( '../api-functions.php' );
 
-$testing = true;
-
-if ( !$testing ) {
-    $postData = getPOSTData();
-}
 
 /**
- * POST: /api/getUserData
- * Gets a user's data from salesforce
+ * POST: /api/getUnfinishedOutreachTargets
+ * Gets a list of outreach targets that the user is planning on contacting.
  * POST Parameters:
  * firebaseIdToken: {string} - The user's Firebase login ID token, which is obtained after the user authenticates with Firebase.
  * 
  * Example:
- * URL: /api/getUserData
+ * URL: /api/getUnfinishedOutreachTargets
  * POST data: 'firebaseIdToken=abcd1234'
  * 
- * Returns a JSON object containing all the data on the user that the app needs.
+ * Returns a JSON object containing an array of the outreach targets.
+ * 
+ * ```
+ * [
+ *  {
+ *      id: string,
+ *      name: string,
+ *      type: string,
+ *      address: string,
+ *      city: string
+ *      state: string
+ *      zip: string
+ *      postReports: {
+ *          followUpDate: string | null
+ *      }[]
+ *  }
+ * ]
+ * ```
  */
 
-if ( !$testing ) {
-    // verify that the required parameters are present
-    if ( !isset($postData->firebaseIdToken) ) {
-    errorExit( 400, '`firebaseIdToken` must be present in the POST parameters.' );
-    }
 
-    // verify against Firebase that the ID token is valid (i.e. it represents a logged-in user)
-    $firebaseResponse = firebaseAPIPost( 'getAccountInfo', array('idToken' => $postData->firebaseIdToken) );
-    // check if there was an error with the request itself
-    if ( $firebaseResponse['error'] ) {
-        errorExit( 400, "The request to Firebase failed to execute: " . $firebaseResponse['error'] );
-    }
-    // check if there was an error in the response from Firebase
-    if ( isset($firebaseResponse['content']->error) ) {
-        errorExit( 400, "The request to Firebase returned with an error: " . $firebaseResponse['content']->error->message );
-    }
-}
-
-
+//@@ $firebaseUser = verifyFirebaseLogin();
 // @@TODO: the salesforce contactID should be retrieved from the firebase db
 $contactID = '0031N00001tVsAmQAK';
 // $contactID = '003o000000LD6rLAAT'; // helen
 
-
-// get volunteer type and whether the user has watched the training video
-$contactResponse = salesforceAPIGet( "sobjects/Contact/${contactID}/", array('fields' => 'App_volunteer_type__c,App_has_watched_training_video__c') );
-exitIfResponseHasError( $contactResponse );
-
-// get hours logs
-$records = getAllSalesforceQueryRecords( "SELECT Description__c, Date__c, NumHours__c from AppHoursLogEntry__c WHERE ContactID__c = '$contactID'" );
-// convert the response to the format that the app expects
-$hoursLogs = array();
-foreach( $records as $record ) {
-    array_push( $hoursLogs, (object)array(
-        'taskDescription' => $record->Description__c,
-        'date' => $record->Date__c,
-        'numHours' => $record->NumHours__c
-    ));
-}
 
 // @@TODO: if volunteer type is truck stop volunteer, get outreach target/records. otherwise, get events.
 
@@ -103,13 +82,9 @@ foreach( $outreachTargetRecords as $record ) {
     ));
 }
 
-
-// return a response in a format that the app expects
-$responseContent = (object)array(
-    'volunteerType' => $contactResponse['content']->App_volunteer_type__c,
-    'hasWatchedTrainingVideo' => $contactResponse['content']->App_has_watched_training_video__c,
-    'hoursLogs' => $hoursLogs,
+$response = (object)array(
     'unfinishedOutreachTargets' => $outreachTargets
 );
+
 http_response_code( 200 );
-echo json_encode( $responseContent, JSON_PRETTY_PRINT );
+echo json_encode( $response, JSON_PRETTY_PRINT );

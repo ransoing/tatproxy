@@ -267,7 +267,7 @@ function salesforceAPIGet( $urlSegment, $data = array(), $allowRefreshAuthToken 
 			// save the new access token to disk and to the global variable
 			global $sfAuth;
 			$sfAuth->access_token = json_decode( $refreshResponse['content'] )->access_token;
-			file_put_contents( './sf-auth.json', json_encode($sfAuth) );
+			file_put_contents( __DIR__ . '/sf-auth.json', json_encode($sfAuth) );
 			// try the call to the API again
 			return salesforceAPIGet( $urlSegment, $data, false );
 		}

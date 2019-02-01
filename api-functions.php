@@ -74,3 +74,28 @@ function getAllSalesforceQueryRecords( $query ) {
     }
     return $records;
 }
+
+// checks the POST parameters for a firebase ID token, which is proof of login, and verifies this token against firebase.
+// If there was an error in this verification, the script echoes an error message and quits. Otherwise, it returns data
+// associated with the user in the firebase database
+function verifyFirebaseLogin() {
+    $postData = getPOSTData();
+
+    // verify that the required parameters are present
+    if ( !isset($postData->firebaseIdToken) ) {
+        errorExit( 400, '`firebaseIdToken` must be present in the POST parameters.' );
+    }
+
+    // verify against Firebase that the ID token is valid (i.e. it represents a logged-in user)
+    $firebaseResponse = firebaseAPIPost( 'getAccountInfo', array('idToken' => $postData->firebaseIdToken) );
+    // check if there was an error with the request itself
+    if ( $firebaseResponse['error'] ) {
+        errorExit( 400, "The request to Firebase failed to execute: " . $firebaseResponse['error'] );
+    }
+    // check if there was an error in the response from Firebase
+    if ( isset($firebaseResponse['content']->error) ) {
+        errorExit( 400, "The request to Firebase returned with an error: " . $firebaseResponse['content']->error->message );
+    }
+
+    // @@TODO: get firebase data on the logged-in user and return it
+}
