@@ -76,8 +76,8 @@ function getAllSalesforceQueryRecords( $query ) {
 }
 
 // checks the POST parameters for a firebase ID token, which is proof of login, and verifies this token against firebase.
-// If there was an error in this verification, the script echoes an error message and quits. Otherwise, it returns data
-// associated with the user in the firebase database
+// If there was an error in this verification, the script echoes an error message and quits. Otherwise, it returns the
+// user's salesforce Contact object ID.
 function verifyFirebaseLogin() {
     $postData = getPOSTData();
 
@@ -87,7 +87,10 @@ function verifyFirebaseLogin() {
     }
 
     // verify against Firebase that the ID token is valid (i.e. it represents a logged-in user)
-    $firebaseResponse = firebaseAPIPost( 'getAccountInfo', array('idToken' => $postData->firebaseIdToken) );
+    $firebaseResponse = firebaseAuthAPIPost(
+        'getAccountInfo',
+        array( 'idToken' => $postData->firebaseIdToken )
+    );
     // check if there was an error with the request itself
     if ( $firebaseResponse['error'] ) {
         errorExit( 400, "The request to Firebase failed to execute: " . $firebaseResponse['error'] );
@@ -97,5 +100,19 @@ function verifyFirebaseLogin() {
         errorExit( 400, "The request to Firebase returned with an error: " . $firebaseResponse['content']->error->message );
     }
 
-    // @@TODO: get firebase data on the logged-in user and return it
+    // query fireDatabase to get the salesforce ID
+    $fireDatabaseResponse = firebaseDbAPIGet(
+        'users/' . $firebaseResponse['content']->users[0]->localId . '/salesforceId',
+        array( 'auth' => $postData->firebaseIdToken )
+    );
+    // check if there was an error with the request itself
+    if ( $firebaseResponse['error'] ) {
+        errorExit( 400, "The request to FireDatabase failed to execute: " . $fireDatabaseResponse['error'] );
+    }
+    // check if there was an error in the response from Firebase
+    if ( isset($fireDatabaseResponse['content']->error) ) {
+        errorExit( 400, "The request to FireDatabase returned with an error: " . $fireDatabaseResponse['content']->error );
+    }
+
+    return $fireDatabaseResponse['content'];
 }

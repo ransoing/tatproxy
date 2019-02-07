@@ -2,6 +2,15 @@
 require_once( '../functions.php' );
 require_once( '../api-functions.php' );
 
+// echo <<<EOT
+// {
+//     "firstName" : "Bob",
+//     "lastName" : "Smith",
+//     "volunteerType": "truckStopVolunteer",
+//     "hasWatchedTrainingVideo": true
+// }
+// EOT;
+// exit;
 
 /**
  * POST: /api/getBasicUserData
@@ -26,11 +35,7 @@ require_once( '../api-functions.php' );
  */
 
 
-//@@ $firebaseUser = verifyFirebaseLogin();
-// @@TODO: the salesforce contactID should be retrieved from the firebase db
-$contactID = '0031N00001tVsAmQAK';
-// $contactID = '003o000000LD6rLAAT'; // helen
-
+$contactID = verifyFirebaseLogin();
 
 // get volunteer type and whether the user has watched the training video
 $contactResponse = salesforceAPIGet(

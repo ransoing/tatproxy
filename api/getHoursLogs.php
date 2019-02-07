@@ -2,6 +2,28 @@
 require_once( '../functions.php' );
 require_once( '../api-functions.php' );
 
+// echo <<<EOT
+// {
+//     "hoursLogs": [
+//         {
+//             "taskDescription": "Second hours log entry",
+//             "date": "2019-01-01",
+//             "numHours": 12
+//         },
+//         {
+//             "taskDescription": "Test description\\nof task",
+//             "date": "2019-01-15",
+//             "numHours": 4
+//         },
+//         {
+//             "taskDescription": "oh hello.",
+//             "date": "2112-12-12",
+//             "numHours": 400
+//         }
+//     ]
+// }
+// EOT;
+// exit;
 
 /**
  * POST: /api/getHoursLogs
@@ -27,10 +49,7 @@ require_once( '../api-functions.php' );
  */
 
 
-//@@ $firebaseUser = verifyFirebaseLogin();
-// @@TODO: the salesforce contactID should be retrieved from the firebase db
-$contactID = '0031N00001tVsAmQAK';
-// $contactID = '003o000000LD6rLAAT'; // helen
+$contactID = verifyFirebaseLogin();
 
 // get hours logs
 $records = getAllSalesforceQueryRecords( "SELECT Description__c, Date__c, NumHours__c from AppHoursLogEntry__c WHERE ContactID__c = '$contactID'" );

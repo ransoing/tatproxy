@@ -6,6 +6,7 @@
         "APIName": "TAT_Mobile_App"
     },
     "firebase": {
-        "apiKey": "KRkBdyxvgyS4XVAEaQyQn1fvctDbAcIzHS4tvDy"
+        "apiKey": "KRkBdyxvgyS4XVAEaQyQn1fvctDbAcIzHS4tvDy",
+        "projectId": "some-project-name"
     }
 }

@@ -47,7 +47,7 @@ function getFirebaseStatus() {
 	// check whether crucial info is defined in the config
 	if ( empty($config->firebase) || empty($config->firebase->apiKey) ) { return $fbStatuses[2]; }
 	// make a call to firebase to see if the key is valid
-	$apiResponse = firebaseAPIPost( 'getAccountInfo', array('idToken'=>'intentionallyBogus') );
+	$apiResponse = firebaseAuthAPIPost( 'getAccountInfo', array('idToken'=>'intentionallyBogus') );
 
 	if ( !$apiResponse['error'] && isset($apiResponse['content']) ) {
 		// in the response content, expect a specific error regarding a bad ID token (because we don't have one right now).
@@ -203,12 +203,31 @@ function post( $url, $data ) {
  * Makes a POST request to the firebase API and returns an assoc array with 'httpCode' and 'content'.
  * Returns an array with 'error' if the request fails or if the response (expected to be json-formatted) cannot be parsed.
  */
-function firebaseAPIPost( $urlSegment, $data = array() ) {
+function firebaseAuthAPIPost( $urlSegment, $data = array() ) {
 	$config = getConfig();
 	// build the URL, with the API key appended
 	$url = 'https://www.googleapis.com/identitytoolkit/v3/relyingparty/' . $urlSegment . '?key=' . $config->firebase->apiKey;
 	$response = post( $url, $data );
 	
+	if ( $response['error'] ) return $response;
+	
+	// parse json
+	$response['content'] = json_decode( $response['content'] );
+	if ( $response['content'] === null ) {
+		return array( 'error' => 'Malformed json.' );
+	}
+
+	return $response;
+}
+
+function firebaseDbAPIGet( $urlSegment, $data = array() ) {
+	$config = getConfig();
+	$url = 'https://' . $config->firebase->projectId . '.firebaseio.com/' . $urlSegment . '.json?' . http_build_query( $data );
+	$ch = curl_init( $url );
+	// add special header
+	curl_setopt( $ch, CURLOPT_HTTPHEADER, array('X-Firebase-Decoding: 1') );
+	$response = curlExecAndFormat( $ch );
+
 	if ( $response['error'] ) return $response;
 	
 	// parse json

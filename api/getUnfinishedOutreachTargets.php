@@ -2,6 +2,40 @@
 require_once( '../functions.php' );
 require_once( '../api-functions.php' );
 
+// echo <<<EOT
+// {
+//     "unfinishedOutreachTargets": [
+//         {
+//             "id": "a1Y1N000002tqFUUAY",
+//             "name": "Bob's Trucker School",
+//             "type": "cdlSchool",
+//             "address": "789 Lane",
+//             "city": "Denver",
+//             "state": "CO",
+//             "zip": "87654",
+//             "postReports": [
+//                 {
+//                     "followUpDate": "2020-01-01"
+//                 },
+//                 {
+//                     "followUpDate": "2019-01-03"
+//                 }
+//             ]
+//         },
+//         {
+//             "id": "a1Y1N000002tqFPUAY",
+//             "name": "Best gas station",
+//             "type": "truckStop",
+//             "address": "1234 Something St.",
+//             "city": "Boulder",
+//             "state": "CO",
+//             "zip": "80303",
+//             "postReports": []
+//         }
+//     ]
+// }
+// EOT;
+// exit;
 
 /**
  * POST: /api/getUnfinishedOutreachTargets
@@ -34,11 +68,7 @@ require_once( '../api-functions.php' );
  */
 
 
-//@@ $firebaseUser = verifyFirebaseLogin();
-// @@TODO: the salesforce contactID should be retrieved from the firebase db
-$contactID = '0031N00001tVsAmQAK';
-// $contactID = '003o000000LD6rLAAT'; // helen
-
+$contactID = verifyFirebaseLogin();
 
 // @@TODO: if volunteer type is truck stop volunteer, get outreach target/records. otherwise, get events.
 
