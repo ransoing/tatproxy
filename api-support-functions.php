@@ -87,70 +87,70 @@ function verifyFirebaseLogin() {
  * or ->getResponse() to get the response object.
  */
 function salesforceAPIGetAsync( $urlSegment, $data = array() ) {
-	return new \React\Promise\Promise( function(callable $resolve, callable $reject) use ($urlSegment, $data) {
-		global $browser;
+    global $browser;
+    $deferred = new \React\Promise\Deferred();
+    $sfAuth = getSFAuth();
+    $url = $sfAuth->instance_url . '/services/data/v44.0/' . $urlSegment . '.json?' . http_build_query( $data );
+    
+    // add access token to header and make the request
+    $browser->get( $url, array('Authorization' => 'Bearer ' . $sfAuth->access_token) )->then(
+        function( $response ) use ($deferred) {
+            $deferred->resolve( getJsonBodyFromResponse($response) );
+        },
+        function( $e ) use ($deferred) {
+            $deferred->reject( $e );
+        }
+    );
 
-		$sfAuth = getSFAuth();
-		$url = $sfAuth->instance_url . '/services/data/v44.0/' . $urlSegment . '.json?' . http_build_query( $data );
-		
-		// add access token to header and make the request
-		$browser->get( $url, array('Authorization' => 'Bearer ' . $sfAuth->access_token) )->then(
-			function( $response ) use ($resolve) {
-				$resolve( getJsonBodyFromResponse($response) );
-			},
-			function( $e ) use ($reject) {
-				$reject( $e );
-			}
-		);
-	});
+    return $deferred->promise();
 }
 
 // performs a SOQL query and returns all records. This may take several requests to the API.
 // i.e. getAllSalesforceQueryRecordsAsync( "SELECT Name from Contact WHERE Name LIKE 'S%' OR Name LIKE 'A%' OR Name LIKE 'R%'" )
 function getAllSalesforceQueryRecordsAsync( $query ) {
-    return new \React\Promise\Promise( function(callable $resolve, callable $reject) use ($query) {
-        $records = [];
-        return salesforceAPIGetAsync( 'query/', array('q' => $query) )->then(
-            function( $response ) use (&$records) {
-                $records = $response->records;
-                return getNextRecordsAsync( $response, $records );
-            },
-            function( $e ) use ($reject) {
-                $reject( $e );
-            }
-        )->then( function() use ($resolve, &$records) {
-            $resolve( $records );
-        }, function($e) use ($reject) {
-            $reject( $e );
-        });
+    $deferred = new \React\Promise\Deferred();
+    $records = [];
+    salesforceAPIGetAsync( 'query/', array('q' => $query) )->then(
+        function( $response ) use (&$records) {
+            $records = $response->records;
+            return getNextRecordsAsync( $response, $records );
+        },
+        function( $e ) use ($deferred) {
+            $deferred->reject( $e );
+        }
+    )->then( function() use ($deferred, &$records) {
+        $deferred->resolve( $records );
+    }, function($e) use ($deferred) {
+        $deferred->reject( $e );
     });
+    return $deferred->promise();
 }
 
 /**
  * Recursively gets the next set of records in a query.
  */
 function getNextRecordsAsync( $response, &$records ) {
-    return new \React\Promise\Promise( function(callable $resolve, callable $reject) use ($response, &$records) {
-        if ( $response->done ) {
-            $resolve();
-        } else {
-            // get the segment of the url after /vXX.X/
-            $nextRecordsUrl = $response->nextRecordsUrl;
-            $urlSegment = substr( $nextRecordsUrl, strpos($nextRecordsUrl, 'query/') );
-            // make request for the next batch
-            return salesforceAPIGetAsync( $urlSegment )->then(
-                function( $nextResponse ) use ($resolve, $reject, &$records) {
-                    // concat the new records with the ones we have so far
-                    $records = array_merge( $records, $nextResponse->records );
-                    return getNextRecordsAsync( $nextResponse, $records );
-                }
-            )->then( function() use ($resolve) {
-                $resolve();
-            }, function($e) use ($reject) {
-                $reject();
-            });
-        }
-    });
+    $deferred = new \React\Promise\Deferred();
+    if ( $response->done ) {
+        $deferred->resolve();
+    } else {
+        // get the segment of the url after /vXX.X/
+        $nextRecordsUrl = $response->nextRecordsUrl;
+        $urlSegment = substr( $nextRecordsUrl, strpos($nextRecordsUrl, 'query/') );
+        // make request for the next batch
+        return salesforceAPIGetAsync( $urlSegment )->then(
+            function( $nextResponse ) use (&$records) {
+                // concat the new records with the ones we have so far
+                $records = array_merge( $records, $nextResponse->records );
+                return getNextRecordsAsync( $nextResponse, $records );
+            }
+        )->then( function() use ($deferred) {
+            $deferred->resolve();
+        }, function($e) use ($deferred) {
+            $deferred->reject();
+        });
+    }
+    return $deferred->promise();
 }
 
 /**
@@ -158,36 +158,36 @@ function getNextRecordsAsync( $response, &$records ) {
  * or rejects with an error object, which has ->getMessage() and ->getResponse()
  */
 function refreshSalesforceTokenAsync() {
-	return new \React\Promise\Promise( function(callable $resolve, callable $reject) {
-		global $browser;
-		$sfAuth = getSFAuth();
-		$config = getConfig();
+    global $browser;
+	$deferred = new \React\Promise\Deferred();
+    $sfAuth = getSFAuth();
+    $config = getConfig();
 
-		// get a new auth token using the refresh token
-		$browser->post(
-			'https://login.salesforce.com/services/oauth2/token',
-			array( 'Content-Type' => 'application/x-www-form-urlencoded' ),
-			http_build_query( array(
-				'grant_type'	=> 'refresh_token',
-				'refresh_token'	=> $sfAuth->refresh_token,
-				'client_id'     => $config->salesforce->consumerKey,
-				'client_secret' => $config->salesforce->consumerSecret,
-				'format'		=> 'json'
-			))
-		)->then(
-			function( $refreshResponse ) use ($resolve, $reject) {
-				// save the new access token to disk and to the global variable
-				global $sfAuth;
-				$refreshBody = getJsonBodyFromResponse( $refreshResponse );
-				$sfAuth->access_token = $refreshBody->access_token;
-				file_put_contents( __DIR__ . '/sf-auth.json', json_encode($sfAuth) );
-				$resolve( true );
-			}, function( $e ) use ($reject) {
-				// the refresh token didn't work
-				$reject( $e );
-			}
-		);
-	});
+    // get a new auth token using the refresh token
+    $browser->post(
+        'https://login.salesforce.com/services/oauth2/token',
+        array( 'Content-Type' => 'application/x-www-form-urlencoded' ),
+        http_build_query( array(
+            'grant_type'	=> 'refresh_token',
+            'refresh_token'	=> $sfAuth->refresh_token,
+            'client_id'     => $config->salesforce->consumerKey,
+            'client_secret' => $config->salesforce->consumerSecret,
+            'format'		=> 'json'
+        ))
+    )->then(
+        function( $refreshResponse ) use ($deferred) {
+            // save the new access token to disk and to the global variable
+            global $sfAuth;
+            $refreshBody = getJsonBodyFromResponse( $refreshResponse );
+            $sfAuth->access_token = $refreshBody->access_token;
+            file_put_contents( __DIR__ . '/sf-auth.json', json_encode($sfAuth) );
+            $deferred->resolve( true );
+        }, function( $e ) use ($deferred) {
+            // the refresh token didn't work
+            $deferred->reject( $e );
+        }
+    );
+    return $deferred->promise();
 }
 
 

@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit25f62ae954a54fadb102d6db07db783a
+class ComposerStaticInitd5f4eb7b806885072e70b2cb4a18879f
 {
     public static $files = array (
         'ad155f8f1cf0d418fe49e248db8c661b' => __DIR__ . '/..' . '/react/promise/src/functions_include.php',
@@ -102,9 +102,9 @@ class ComposerStaticInit25f62ae954a54fadb102d6db07db783a
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit25f62ae954a54fadb102d6db07db783a::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit25f62ae954a54fadb102d6db07db783a::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInit25f62ae954a54fadb102d6db07db783a::$prefixesPsr0;
+            $loader->prefixLengthsPsr4 = ComposerStaticInitd5f4eb7b806885072e70b2cb4a18879f::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInitd5f4eb7b806885072e70b2cb4a18879f::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInitd5f4eb7b806885072e70b2cb4a18879f::$prefixesPsr0;
 
         }, null, ClassLoader::class);
     }
