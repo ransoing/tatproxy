@@ -1,0 +1,6 @@
+{
+    "require": {
+        "clue/buzz-react": "^2.5",
+        "clue/block-react": "^1.3"
+    }
+}

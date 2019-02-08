@@ -1,4 +1,10 @@
 <?php
+
+require_once( '../vendor/autoload.php' );
+
+$loop = \React\EventLoop\Factory::create();
+$browser = new \Clue\React\Buzz\Browser( $loop );
+
 $config = null;
 $sfAuth = null;
 
@@ -241,6 +247,7 @@ function firebaseDbAPIGet( $urlSegment, $data = array() ) {
 
 /**
  * Makes a GET request to the salesforce API and returns an assoc array with 'httpCode' and 'content'.
+ * Automatically refreshes the access token if needed.
  * Returns an array with 'error' if the request fails or if the response (expected to be json-formatted) cannot be parsed.
  */
 function salesforceAPIGet( $urlSegment, $data = array(), $allowRefreshAuthToken = true ) {

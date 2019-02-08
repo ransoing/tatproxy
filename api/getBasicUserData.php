@@ -35,7 +35,8 @@ require_once( '../api-functions.php' );
  */
 
 
-$contactID = verifyFirebaseLogin();
+// $contactID = verifyFirebaseLogin();
+$contactID = '0031N00001tVsAmQAK';
 
 // get volunteer type and whether the user has watched the training video
 $contactResponse = salesforceAPIGet(
