@@ -109,16 +109,20 @@ $handleRequestSuccess = function( $responses ) {
  * Run this function when any salesforce http request fails (and the access token doesn't need to be refreshed)
  */
 $handleRequestFailure = function( $e ) {
-    errorExit( 400, (string)$e->getResponse()->getBody() );
+    if ( method_exists($e, 'getResponse') ) {
+        $message = $e->getResponse()->getBody();
+    } else {
+        $message = $e->getMessage();
+    }
+    errorExit( 400, $message );
 };
-
 
 
 /**
  * function to make simultaneous http requests to salesforce, but uses GET parameters
  * to only use the ones that are needed.
  */
-function makeRequests() {
+$makeRequests = function() {
     global $contactID, $requestedParts, $apiFunctions;
     $promises = array();
     // call the appropriate API functions based on the requested parts passed through GET parameters
@@ -129,24 +133,33 @@ function makeRequests() {
     }
     // return an all-promise so the results of the request can be handled
     return \React\Promise\all( $promises );
-}
+};
 
 // @@TODO: verifying the firebase login should return a firebase uid. Change verifyFirebaseLogin function.
-// $contactID = verifyFirebaseLogin();
+// $firebaseUid = verifyFirebaseLogin();
+$firebaseUid = 'abc';
+
+
+$contactID = '0031N00001tVsAmQAK';
 
 // @@TODO: the contactID will be the ID of the (yet-to-be-created) AppUser object in salesforce.
 // Store the firebase uid as a property on the AppUser object, and retrieve the AppUser ID by
 // making a query on salesforce to retrieve AppUser by firebase uid.
 // getAllSalesforceQueryRecordsAsync( '...' );
-$contactID = '0031N00001tVsAmQAK';
-
+getSalesforceAppUserID( $firebaseUid )->then(
+    function( $retrievedAppUserID ) {
+        global $appUserID;
+        return $appUserID = $retrievedAppUserID;
+    }
 // Make all http requests. If any of them fail, check if the failure is due to an expired token.
 // If it is, refresh the token and try the requests again.
-makeRequests()->then(
+)->then(
+    $makeRequests
+)->then(
     $handleRequestSuccess,
     function( $e ) use ($handleRequestFailure, $handleRequestSuccess) {
         // find out if the error was due to an expired token
-        if ( !empty($e->getResponse()) && !empty($e->getResponse()->getBody())  ) {
+        if ( method_exists($e, 'getResponse') && !empty($e->getResponse()) && !empty($e->getResponse()->getBody())  ) {
             $response = $e->getResponse();
             $bodyString = (string)$response->getBody();
             $body = getJsonBodyFromResponse( $response );
