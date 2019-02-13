@@ -123,35 +123,30 @@ $handleRequestFailure = function( $e ) {
  * to only use the ones that are needed.
  */
 $makeRequests = function() {
-    global $contactID, $requestedParts, $apiFunctions;
+    global $appUserID, $requestedParts, $apiFunctions;
     $promises = array();
     // call the appropriate API functions based on the requested parts passed through GET parameters
     foreach( $requestedParts as $part ) {
         // call the API function and store the promise
-        $promise = $apiFunctions[$part]( $contactID );
+        $promise = $apiFunctions[$part]( $appUserID );
         array_push( $promises, $promise );
     }
     // return an all-promise so the results of the request can be handled
     return \React\Promise\all( $promises );
 };
 
-// @@TODO: verifying the firebase login should return a firebase uid. Change verifyFirebaseLogin function.
-// $firebaseUid = verifyFirebaseLogin();
-$firebaseUid = 'abcd';
+// verify the firebase login and get the user's firebase uid.
+$firebaseUid = verifyFirebaseLogin();
+$appUserID = '';
 
-
-$contactID = '0031N00001tVsAmQAK';
-
-// @@TODO: the contactID will be the ID of the (yet-to-be-created) AppUser object in salesforce.
-// Store the firebase uid as a property on the AppUser object, and retrieve the AppUser ID by
-// making a query on salesforce to retrieve AppUser by firebase uid.
+// Get the ID of the AppUser entry in salesforce
 getSalesforceAppUserID( $firebaseUid )->then(
     function( $retrievedAppUserID ) {
         global $appUserID;
         return $appUserID = $retrievedAppUserID;
     }
-// Make all http requests. If any of them fail, check if the failure is due to an expired token.
-// If it is, refresh the token and try the requests again.
+// Use the AppUser ID to make all http requests. If any of them fail, check if the failure is due to
+// an expired token. If it is, refresh the token and try the requests again.
 )->then(
     $makeRequests
 )->then(

@@ -226,24 +226,6 @@ function firebaseAuthAPIPost( $urlSegment, $data = array() ) {
 	return $response;
 }
 
-function firebaseDbAPIGet( $urlSegment, $data = array() ) {
-	$config = getConfig();
-	$url = 'https://' . $config->firebase->projectId . '.firebaseio.com/' . $urlSegment . '.json?' . http_build_query( $data );
-	$ch = curl_init( $url );
-	// add special header
-	curl_setopt( $ch, CURLOPT_HTTPHEADER, array('X-Firebase-Decoding: 1') );
-	$response = curlExecAndFormat( $ch );
-
-	if ( $response['error'] ) return $response;
-	
-	// parse json
-	$response['content'] = json_decode( $response['content'] );
-	if ( $response['content'] === null ) {
-		return array( 'error' => 'Malformed json.' );
-	}
-
-	return $response;
-}
 
 /**
  * Makes a GET request to the salesforce API and returns an assoc array with 'httpCode' and 'content'.

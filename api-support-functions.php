@@ -45,7 +45,7 @@ function getPOSTData() {
 /**
  * Checks the POST parameters for a firebase ID token, which is proof of login, and verifies this token against firebase.
  * If there was an error in this verification, the script echoes an error message and quits. Otherwise, it returns the
- * user's salesforce Contact object ID.
+ * user's firebase user ID.
  */
 function verifyFirebaseLogin() {
     $postData = getPOSTData();
@@ -69,38 +69,25 @@ function verifyFirebaseLogin() {
         errorExit( 400, "The request to Firebase returned with an error: " . $firebaseResponse['content']->error->message );
     }
 
-    // query fireDatabase to get the salesforce ID
-    $fireDatabaseResponse = firebaseDbAPIGet(
-        'users/' . $firebaseResponse['content']->users[0]->localId . '/salesforceId',
-        array( 'auth' => $postData->firebaseIdToken )
-    );
-    // check if there was an error with the request itself
-    if ( $firebaseResponse['error'] ) {
-        errorExit( 400, "The request to FireDatabase failed to execute: " . $fireDatabaseResponse['error'] );
-    }
-    // check if there was an error in the response from Firebase
-    if ( isset($fireDatabaseResponse['content']->error) ) {
-        errorExit( 400, "The request to FireDatabase returned with an error: " . $fireDatabaseResponse['content']->error );
-    }
-
-    return $fireDatabaseResponse['content'];
+    return $firebaseResponse['content']->users[0]->localId;
 }
 
 
+/**
+ * Returns a promise which resolves with a string representing the AppUserID from a local cache, or fetches it from salesforce.
+ * Rejects with an error message if there is no App User in salesforce that is associated with the given firebaseUid
+ */
 function getSalesforceAppUserID( $firebaseUid ) {
     // see if we've already saved the appUserID for this firebase user
     $cachedID = getCachedAppUserID( $firebaseUid );
     if ( $cachedID !== false ) {
-        // @@
-        echo "Read from cache file\n";
         // return a promise with the saved ID
         $deferred = new \React\Promise\Deferred();
         $deferred->resolve( $cachedID );
         return $deferred->promise();
     }
 
-    // @@ change the query to something like    WHERE firebase_uid__c = '$firebaseUid'
-    return getAllSalesforceQueryRecordsAsync( "SELECT Id from Contact WHERE FirstName = 'Ransom'" )->then(
+    return getAllSalesforceQueryRecordsAsync( "SELECT Id from TAT_App_User__c WHERE Firebase_UID__c = '$firebaseUid'" )->then(
         function( $queryRecords ) use ($firebaseUid) {
             print_r($queryRecords );
             if ( sizeof($queryRecords) === 0 ) {
@@ -115,7 +102,7 @@ function getSalesforceAppUserID( $firebaseUid ) {
 
 
 /**
- * Returns a string representing the AppUserID, or returns false if not present.
+ * Returns a string representing the AppUserID from a local cache, or returns false if not present.
  */
 function getCachedAppUserID( $firebaseUid ) {
     global $jsonCacheFilepath, $sqliteCacheFilepath;

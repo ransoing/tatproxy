@@ -16,18 +16,22 @@ $apiFunctions = array();
  * Gets miscellaneous data on the user.
  * URL: /api/getUserData?parts=basic
  */
-$apiFunctions['basic'] = function( $contactID ) {
+$apiFunctions['basic'] = function( $appUserID ) {
     return salesforceAPIGetAsync(
-        "sobjects/Contact/${contactID}/",
-        array('fields' => 'App_volunteer_type__c,App_has_watched_training_video__c,FirstName,LastName')
-    )->then( function($response) use ($contactID) {
+        "sobjects/TAT_App_User__c/${appUserID}/",
+        array('fields' => 'Volunteer_Type__c,Has_Watched_Training_Videos__c,First_Name__c,Last_Name__c,Address__c,City__c,State__c,Zip__c')
+    )->then( function($response) use ($appUserID) {
         // convert to a format that the app expects
         return array(
-            'salesforceId' => $contactID,
-            'volunteerType' => $response->App_volunteer_type__c,
-            'hasWatchedTrainingVideo' => $response->App_has_watched_training_video__c,
-            'firstName' => $response->FirstName,
-            'lastName' => $response->LastName
+            'salesforceId' => $appUserID,
+            'volunteerType' => $response->Volunteer_Type__c,
+            'hasWatchedTrainingVideo' => $response->Has_Watched_Training_Videos__c,
+            'firstName' => $response->First_Name__c,
+            'lastName' => $response->Last_Name__c,
+            'address' => $response->Address__c,
+            'city' => $response->City__c,
+            'state' => $response->State__c,
+            'zip' => $response->Zip__c
         );
     });
 };
@@ -36,9 +40,9 @@ $apiFunctions['basic'] = function( $contactID ) {
  * Gets a listing of hours log entries that the user has submitted.
  * URL: /api/getUserData?parts=hoursLogs
  */
-$apiFunctions['hoursLogs'] = function ( $contactID ) {
+$apiFunctions['hoursLogs'] = function ( $appUserID ) {
     return getAllSalesforceQueryRecordsAsync(
-        "SELECT Description__c, Date__c, NumHours__c from AppHoursLogEntry__c WHERE ContactID__c = '$contactID'"
+        "SELECT Description__c, Date__c, Num_Hours__c from TAT_App_Hours_Log_Entry__c WHERE TAT_App_User__c = '$appUserID'"
     )->then( function($records) {
         // convert to a format that the app expects
         $hoursLogs = array();
@@ -46,7 +50,7 @@ $apiFunctions['hoursLogs'] = function ( $contactID ) {
             array_push( $hoursLogs, (object)array(
                 'taskDescription' => $record->Description__c,
                 'date' => $record->Date__c,
-                'numHours' => $record->NumHours__c
+                'numHours' => $record->Num_Hours__c
             ));
         }
 
@@ -62,12 +66,12 @@ $apiFunctions['hoursLogs'] = function ( $contactID ) {
  * returns the data on those.
  * URL: /api/getUserData?parts=unfinishedOutreachTargets
  */
-$apiFunctions['unfinishedOutreachTargets'] = function ( $contactID ) {
+$apiFunctions['unfinishedOutreachTargets'] = function ( $appUserID ) {
     $promises = array(
         // get all outreach targets
-        getAllSalesforceQueryRecordsAsync( "SELECT Id, LocationName__c, LocationType__c, Address__c, City__c, State__c, Zip__c FROM AppOutreachTarget__c WHERE ContactID__c = '$contactID'" ),
+        getAllSalesforceQueryRecordsAsync( "SELECT Id, Location_Name__c, Location_Type__c, Address__c, City__c, State__c, Zip__c FROM TAT_App_Outreach_Target__c WHERE TAT_App_User__c = '$appUserID'" ),
         // get all outreach reports
-        getAllSalesforceQueryRecordsAsync( "SELECT FollowUpDate__c, Accomplishments__c, AppOutreachTarget__c FROM AppOutreachReport__c WHERE AppOutreachTarget__r.ContactID__c = '$contactID'" )
+        getAllSalesforceQueryRecordsAsync( "SELECT Follow_Up_Date__c, Accomplishments__c, Outreach_Target__c FROM TAT_App_Outreach_Report__c WHERE TAT_App_Outreach_Target__r.TAT_App_User__c = '$appUserID'" )
     );
     return \React\Promise\all( $promises )->then(
         function( $responses ) {
@@ -81,14 +85,14 @@ $apiFunctions['unfinishedOutreachTargets'] = function ( $contactID ) {
                 $targetIsFinished = false;
                 $postReports = array();
                 foreach( $outreachReportRecords as $report ) {
-                    if ( $report->AppOutreachTarget__c == $record->Id ) {
+                    if ( $report->App_Outreach_Target__c == $record->Id ) {
                         // if any reports for this target have a follow-up date of 'null', then the volunteer is done with this location
-                        if ( $report->FollowUpDate__c == null ) {
+                        if ( $report->Follow_Up_Date__c == null ) {
                             $targetIsFinished = true;
                             break;
                         }
                         array_push( $postReports, (object)array(
-                            'followUpDate' => $report->FollowUpDate__c,
+                            'followUpDate' => $report->Follow_Up_Date__c,
                         ));
                     }
                 }
@@ -99,8 +103,8 @@ $apiFunctions['unfinishedOutreachTargets'] = function ( $contactID ) {
                 }
                 array_push( $outreachTargets, (object)array(
                     'id' => $record->Id,
-                    'name' => $record->LocationName__c,
-                    'type' => $record->LocationType__c,
+                    'name' => $record->Location_Name__c,
+                    'type' => $record->Location_Type__c,
                     'address' => $record->Address__c,
                     'city' => $record->City__c,
                     'state' => $record->State__c,
