@@ -1,7 +1,7 @@
 <?php
 
-$appUserIdCacheFilePath = __DIR__ . '/app-user-ids.json';
-$appUserIdSqliteFilePath = __DIR__ . '/app-user-ids.sqlite';
+$jsonCacheFilepath = __DIR__ . '/app-user-ids.json';
+$sqliteCacheFilepath = __DIR__ . '/app-user-ids.sqlite';
 
 // To support CORS, return 200 for HEAD or OPTIONS requests.
 if ( $_SERVER['REQUEST_METHOD'] === 'HEAD' || $_SERVER['REQUEST_METHOD'] === 'OPTIONS' ) {
@@ -101,7 +101,7 @@ function getSalesforceAppUserID( $firebaseUid ) {
 
     // @@ change the query to something like    WHERE firebase_uid__c = '$firebaseUid'
     return getAllSalesforceQueryRecordsAsync( "SELECT Id from Contact WHERE FirstName = 'Ransom'" )->then(
-        function( $queryRecords ) {
+        function( $queryRecords ) use ($firebaseUid) {
             print_r($queryRecords );
             if ( sizeof($queryRecords) === 0 ) {
                 throw new Exception( 'User does not exist in salesforce.' ); // @@ return some expected error so that the app can know when the user is a new user, without salesforce id.
@@ -118,22 +118,22 @@ function getSalesforceAppUserID( $firebaseUid ) {
  * Returns a string representing the AppUserID, or returns false if not present.
  */
 function getCachedAppUserID( $firebaseUid ) {
+    global $jsonCacheFilepath, $sqliteCacheFilepath;
     // the cache may be saved as a json file, or saved in a sqlite db
-    if ( class_exists('SQLite3') && file_exists($appUserIdSqliteFilePath) ) {
+    if ( class_exists('SQLite3') && file_exists($sqliteCacheFilepath) ) {
         // load from sqlite
-        $db = new SQLite3();
-        $db->open( $appUserIdSqliteFilePath );
+        $db = new SQLite3( $sqliteCacheFilepath );
         $result = $db->query( "SELECT * FROM cache WHERE firebaseUid='$firebaseUid'" );
         $row = $result->fetchArray();
         $db->close();
         if ( $row ) {
             return $row['appUserID'];
         }
-    } else if ( file_exists($appUserIdCacheFilePath) ) {
+    } else if ( file_exists($jsonCacheFilepath) ) {
         // load from json file
-        $appUserIdCache = json_decode( file_get_contents($appUserIdCacheFilePath) );
-        if ( isset($appUserIdCache[$firebaseUid]) ) {
-            return $appUserIdCache[$firebaseUid];
+        $appUserIdCache = json_decode( file_get_contents($jsonCacheFilepath) );
+        if ( isset($appUserIdCache->$firebaseUid) ) {
+            return $appUserIdCache->$firebaseUid;
         }
     }
 
@@ -145,25 +145,25 @@ function getCachedAppUserID( $firebaseUid ) {
  * SQLite3 is installed.
  */
 function cacheAppUserID( $firebaseUid, $appUserID ) {
+    global $jsonCacheFilepath, $sqliteCacheFilepath;
     // try saving to sqlite db first, then to a json file
     if ( class_exists('SQLite3') ) {
-        $db = new SQLite3();
-        $db->open( $appUserIdSqliteFilePath );
+        $db = new SQLite3( $sqliteCacheFilepath );
         // check if the cache table exists and create it if it doesn't
         $db->exec( "CREATE TABLE IF NOT EXISTS cache (id INTEGER PRIMARY KEY AUTOINCREMENT, firebaseUid TEXT, appUserID TEXT)" );
         // add the value to the cache table
-        $db->exec( "INSERT INTO cache (firebaseUid, appUserID) VALUES ('$firebaseUid', '$appUserID'" );
+        $db->exec( "INSERT INTO cache (firebaseUid, appUserID) VALUES ('$firebaseUid', '$appUserID')" );
         $db->close();
     } else {
         // read the existing file if there is one
-        if ( file_exists($appUserIdCacheFilePath) ) {
-            $appUserIdCache = json_decode( file_get_contents($appUserIdCacheFilePath) );
+        if ( file_exists($jsonCacheFilepath) ) {
+            $appUserIdCache = json_decode( file_get_contents($jsonCacheFilepath) );
         } else {
-            $appUserIdCache = array();
+            $appUserIdCache = (object)array();
         }
         // add the new cache value to the file
-        $appUserIdCache[ $firebaseUid ] = $appUserID;
-        file_put_contents( $appUserIdCacheFilePath, json_encode($appUserIdCache) );
+        $appUserIdCache->$firebaseUid = $appUserID;
+        file_put_contents( $jsonCacheFilepath, json_encode($appUserIdCache) );
     }
 }
 

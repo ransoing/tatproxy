@@ -137,7 +137,7 @@ $makeRequests = function() {
 
 // @@TODO: verifying the firebase login should return a firebase uid. Change verifyFirebaseLogin function.
 // $firebaseUid = verifyFirebaseLogin();
-$firebaseUid = 'abc';
+$firebaseUid = 'abcd';
 
 
 $contactID = '0031N00001tVsAmQAK';
@@ -145,7 +145,6 @@ $contactID = '0031N00001tVsAmQAK';
 // @@TODO: the contactID will be the ID of the (yet-to-be-created) AppUser object in salesforce.
 // Store the firebase uid as a property on the AppUser object, and retrieve the AppUser ID by
 // making a query on salesforce to retrieve AppUser by firebase uid.
-// getAllSalesforceQueryRecordsAsync( '...' );
 getSalesforceAppUserID( $firebaseUid )->then(
     function( $retrievedAppUserID ) {
         global $appUserID;
