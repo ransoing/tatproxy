@@ -1,83 +1,8 @@
 <?php
 
 /**
- * POST: /api/getUserData?parts=[part1,part2,...]
- * Gets data about a user from salesforce
- * POST Parameters:
- *  firebaseIdToken: {string} (required)
- *      The user's Firebase login ID token, which can be obtained through the firebase API
- *      after the user authenticates with Firebase. Note that this is not the uid -- this is
- *      the token that is used as proof of authentication in requests to firebase.
- * 
- * GET Parameters:
- *  parts (required)
- *      A comma-delimited list of which parts of the user data to return.
- *      Acceptable values in the list are "basic", "hoursLogs", "unfinishedOutreachTargets"
- * 
- * Example:
- * URL: /api/getUserData?parts=basic,hoursLogs,unfinishedOutreachTargets
- * POST data: 'firebaseIdToken=abcd1234'
- * 
- * Returns a JSON object containing data on the user.
- * 
- * If "basic" is in the list of parts, the API will return basic info on the user.
- * The following properties will be included in the returned object:
- * ```
- * {
- *      salesforceId: {string}, // the salesforce object identifier
- *      firstName: {string},
- *      lastName: {string},
- *      volunteerType: {string},
- *      hasWatchedTrainingVideo: {boolean}
- * }
- * ```
- * 
- * If "hoursLogs" is in the list of parts, the API will return an array of hours log entries that the
- * user has previously submitted.
- * The following properties will be included in the returned object:
- * ```
- * {
- *      hoursLogs: [
- *          {
- *              taskDescription: {string},
- *              date: {string},
- *              numHours: {number}
- *          }, {
- *              ...
- *          }
- *      ]
- * }
- * ```
- * 
- * If "unfinishedOutreachTargets" is in the list of parts, the API will return a list of outreach targets
- * (locations identified in pre-outreach form submissions) which the user has followed up with and does not
- * plan any additional follow-ups. Additional planned follow-up dates (identified by post-outreach surveys)
- * are included in the response.
- * The following properties will be included in the returned object:
- * ```
- * {
- *      unfinishedOutreachTargets: [
- *          {
- *              id: {string}, // the salesforce object identifier
- *              name: {string},
- *              type: {string},
- *              address: {string},
- *              city: {string},
- *              state: {string},
- *              zip: {string},
- *              postReports: [
- *                  {
- *                      followUpDate: {string | null}
- *                  }, {
- *                      ...
- *                  }
- *              ]
- *          }, {
- *              ...
- *          }
- *      ]
- * }
- * ```
+ * The high-level code for the getUserData API call.
+ * See index.php for usage details.
  */
 
 require_once( '../functions.php' );

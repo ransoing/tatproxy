@@ -114,6 +114,11 @@ input {
     font-size: 14px;
 }
 
+.api-def {
+    padding-left: 2em;
+    font-size: 90%;
+}
+
 
 /* loading spinner */
 .loading {

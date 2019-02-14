@@ -71,7 +71,7 @@ $apiFunctions['unfinishedOutreachTargets'] = function ( $appUserID ) {
         // get all outreach targets
         getAllSalesforceQueryRecordsAsync( "SELECT Id, Location_Name__c, Location_Type__c, Address__c, City__c, State__c, Zip__c FROM TAT_App_Outreach_Target__c WHERE TAT_App_User__c = '$appUserID'" ),
         // get all outreach reports
-        getAllSalesforceQueryRecordsAsync( "SELECT Follow_Up_Date__c, Accomplishments__c, Outreach_Target__c FROM TAT_App_Outreach_Report__c WHERE TAT_App_Outreach_Target__r.TAT_App_User__c = '$appUserID'" )
+        getAllSalesforceQueryRecordsAsync( "SELECT Follow_Up_Date__c, Accomplishments__c, Outreach_Target__c FROM TAT_App_Outreach_Report__c WHERE Outreach_Target__r.TAT_App_User__c = '$appUserID'" )
     );
     return \React\Promise\all( $promises )->then(
         function( $responses ) {
@@ -85,7 +85,7 @@ $apiFunctions['unfinishedOutreachTargets'] = function ( $appUserID ) {
                 $targetIsFinished = false;
                 $postReports = array();
                 foreach( $outreachReportRecords as $report ) {
-                    if ( $report->App_Outreach_Target__c == $record->Id ) {
+                    if ( $report->Outreach_Target__c == $record->Id ) {
                         // if any reports for this target have a follow-up date of 'null', then the volunteer is done with this location
                         if ( $report->Follow_Up_Date__c == null ) {
                             $targetIsFinished = true;

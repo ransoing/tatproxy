@@ -89,13 +89,17 @@ function getSalesforceAppUserID( $firebaseUid ) {
 
     return getAllSalesforceQueryRecordsAsync( "SELECT Id from TAT_App_User__c WHERE Firebase_UID__c = '$firebaseUid'" )->then(
         function( $queryRecords ) use ($firebaseUid) {
-            print_r($queryRecords );
             if ( sizeof($queryRecords) === 0 ) {
-                throw new Exception( 'User does not exist in salesforce.' ); // @@ return some expected error so that the app can know when the user is a new user, without salesforce id.
+                 // return some expected error so that the app can know when the user is a new user (has no salesforce entry).
+                throw new Exception( json_encode((object)array(
+                    'errorCode' => 'FIREBASE_USER_NOT_IN_SALESFORCE',
+                    'message' => 'The specified Firebase user does not have a TAT App user account in Salesforce.'
+                )));
             }
             $appUserID = $queryRecords[0]->Id;
             // write the ID to file so we can avoid this http request in the future
             cacheAppUserID( $firebaseUid, $appUserID );
+            return $appUserID;
         }
     );
 }

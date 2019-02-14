@@ -19,7 +19,7 @@ require_once( 'functions.php' );
 		The TAT Salesforce account stores data associated with each user of the <strong>TAT mobile app</strong>.
 		The mobile app uses this data stored in Salesforce. However, the mobile app does not
 		directly communicate with Salesforce&mdash;it communicates with this <em>proxy</em> instead.
-		This proxy is given authorization to read any data from Salesforce. Users of the TAT app
+		This proxy is given authorization to read any user's data from Salesforce. Users of the TAT app
 		authenticate with a separate service (Firebase), and the proxy filters data from Salesforce so that each
 		user can only access his/her data.
 	</p>
@@ -28,8 +28,9 @@ require_once( 'functions.php' );
 		app user management separate from Salesforce user management.
 	</p>
 	<p>
-		Users of the app authenticate with Firebase. The app passes their Firebase ID token to the proxy, and the proxy
-		confirms with Firebase that the user is logged in, before giving the user their Salesforce data.
+		Users of the app authenticate with Firebase. The app passes the user's Firebase ID token to the proxy, and the proxy
+		confirms with Firebase that the token is valid and retrieves the user's FirebaseUid from Firebase. The proxy then
+		retrieves the Salesforce data that is associated with that FirebaseUid, and passes it on to the user.
 	</p>
 	<hr>
 
@@ -89,8 +90,124 @@ require_once( 'functions.php' );
 	</section>
 
 	<hr>
-	<h1>Usage</h1>
-	<p>Add API details here.</p>
+	<h1>API</h1>
+	<p>The API provides a way for the TAT mobile app to get a user's data.</p>
+
+	<h3>Make a POST request to:</h3>
+	<pre>/api/getUserData?parts=[LIST_OF_PARTS]</pre>
+
+	<h3>Required headers</h3>
+	<p>One of the following headers must be present in the request:</p>
+	<pre>Content-Type: application/x-www-form-urlencoded</pre>
+	<pre>Content-Type: application/json</pre>
+
+	<h3>GET parameters</h3>
+	<section>
+		<div>
+			<p><code>parts</code> {string} (required)</p>
+			<p class="api-def">
+				A comma-separated list of values. These values define what data will be returned.<br>
+				Acceptable values are: <code>basic</code>, <code>hoursLogs</code>, <code>unfinishedOutreachTargets</code>.<br>
+			</p>
+		</div>
+	</section>
+
+	<h3>POST request body payload parameters</h3>
+	<section>
+		<div>
+			<p><code>firebaseIdToken</code> {string} (required)</p>
+			<p class="api-def">
+				<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retireved
+				from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
+				login state, and access various Firebase resources.<br>
+			</p>
+		</div>
+	</section>
+	
+	<h3>Response payload</h3>
+	<p>The API returns a JSON object containing data on the user.</p>
+
+	<p>
+		If <code>basic</code> is in the list of parts, the API will return basic info on the user.<br>
+		The following properties will be included in the returned object:
+	</p>
+	<pre>{
+    salesforceId: {string}, // the identifier of the object in Salesforce representing the user
+    firstName: {string},
+    lastName: {string},
+    volunteerType: {string},
+    hasWatchedTrainingVideo: {boolean},
+    address: {string},
+    city: {string},
+    state: {string},
+    zip: {string}
+}</pre>
+
+	<p>
+		If <code>hoursLogs</code> is in the list of parts, the API will return an array of hours log entries that the
+ 		user has previously submitted.<br>
+ 		The following properties will be included in the returned object:
+	</p>
+	<pre>{
+    hoursLogs: [
+        {
+            taskDescription: {string},
+            date: {string},
+            numHours: {number}
+        }, {
+            ...
+        }
+    ]
+}</pre>
+
+	<p>
+		If <code>unfinishedOutreachTargets</code> is in the list of parts, the API will return a list of outreach targets
+ 		(locations identified in pre-outreach form submissions) which the user has either not followed up with, or plans to 
+ 		do additional follow-ups for. Additional planned follow-up dates (identified by post-outreach surveys) are included
+		in the response.<br>
+ 		The following properties will be included in the returned object:
+	</p>
+	<pre>{
+    unfinishedOutreachTargets: [
+        {
+            id: {string}, // the identifier of the Salesforce object representing the outreach target
+            name: {string},
+            type: {string},
+            address: {string},
+            city: {string},
+            state: {string},
+            zip: {string},
+            postReports: [
+                {
+                    followUpDate: {string | null}
+                }, {
+                    ...
+                }
+            ]
+        }, {
+            ...
+        }
+    ]
+}</pre>
+
+	<p>
+		If the user defined by the firebaseIdToken does not have an entry in Salesforce, the API will return the following
+		response with a 400 HTTP response code:
+	</p>
+	<pre>{
+    "errorCode": "FIREBASE_USER_NOT_IN_SALESFORCE",
+    "message": "The specified Firebase user does not have a TAT App user account in Salesforce."
+}</pre>
+
+ 	<h3>Example request</h3>
+ 	<p>URL:</p>
+ 	<pre>POST /api/getUserData?parts=basic,hoursLogs,unfinishedOutreachTargets</pre>
+	<p>Headers:</p>
+	<pre>Content-Type: application/json</pre>
+	<p>Request body:</p>
+	<pre>{ "firebaseIdToken": "abcd1234" }</pre>
+
+	
 </main>
 </body>
 </html>
