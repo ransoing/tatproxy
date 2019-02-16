@@ -19,7 +19,7 @@ $apiFunctions = array();
 $apiFunctions['basic'] = function( $appUserID ) {
     return salesforceAPIGetAsync(
         "sobjects/TAT_App_User__c/${appUserID}/",
-        array('fields' => 'Volunteer_Type__c,Has_Watched_Training_Videos__c,First_Name__c,Last_Name__c,Address__c,City__c,State__c,Zip__c')
+        array('fields' => 'Volunteer_Type__c,Has_Watched_Training_Videos__c,First_Name__c,Last_Name__c,Address__c,City__c,State__c,Zip__c,Phone__c')
     )->then( function($response) use ($appUserID) {
         // convert to a format that the app expects
         return array(
@@ -31,7 +31,9 @@ $apiFunctions['basic'] = function( $appUserID ) {
             'address' => $response->Address__c,
             'city' => $response->City__c,
             'state' => $response->State__c,
-            'zip' => $response->Zip__c
+            'zip' => $response->Zip__c,
+            'phone' => $response->Phone__c,
+            'email' => $response->Email__c
         );
     });
 };

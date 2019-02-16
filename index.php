@@ -140,7 +140,9 @@ require_once( 'functions.php' );
     address: {string},
     city: {string},
     state: {string},
-    zip: {string}
+    zip: {string},
+	phone: {string},
+	email: {string}
 }</pre>
 
 	<p>
