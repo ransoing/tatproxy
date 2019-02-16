@@ -25,7 +25,7 @@ $apiFunctions['basic'] = function( $appUserID ) {
         return array(
             'salesforceId' => $appUserID,
             'volunteerType' => $response->Volunteer_Type__c,
-            'hasWatchedTrainingVideo' => $response->Has_Watched_Training_Videos__c,
+            'hasCompletedTrainingFeedback' => $response->Has_Watched_Training_Videos__c,
             'firstName' => $response->First_Name__c,
             'lastName' => $response->Last_Name__c,
             'address' => $response->Address__c,
