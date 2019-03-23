@@ -1,7 +1,7 @@
 <?php
 
-$jsonCacheFilepath = __DIR__ . '/app-user-ids.json';
-$sqliteCacheFilepath = __DIR__ . '/app-user-ids.sqlite';
+$jsonCacheFilepath = __DIR__ . '/contact-ids.json';
+$sqliteCacheFilepath = __DIR__ . '/contact-ids.sqlite';
 
 // To support CORS, return 200 for HEAD or OPTIONS requests.
 if ( $_SERVER['REQUEST_METHOD'] === 'HEAD' || $_SERVER['REQUEST_METHOD'] === 'OPTIONS' ) {
@@ -14,6 +14,17 @@ function errorExit( $httpCode, $errorMessage ) {
     echo $errorMessage;
     exit;
 }
+
+// Use this for the highest level failure handler (after determining that the access token desn't need to be refreshed)
+$handleRequestFailure = function( $e ) {
+    if ( method_exists($e, 'getResponse') ) {
+        $message = $e->getResponse()->getBody();
+    } else {
+        $message = $e->getMessage();
+    }
+    errorExit( 400, $message );
+};
+
 
 // gets POST data sent as either JSON or as form-encoded data.
 // returns an object, or exits the script with an error.
@@ -74,12 +85,54 @@ function verifyFirebaseLogin() {
 
 
 /**
- * Returns a promise which resolves with a string representing the AppUserID from a local cache, or fetches it from salesforce.
- * Rejects with an error message if there is no App User in salesforce that is associated with the given firebaseUid
+ * Make some salesforce request(s), and if there was an error, find out if the error was due to an expired access token.
+ * If it was, refresh the token and try the request again.
+ * @param makeSalesforceRequest A function which returns a promise. This function should make some request to salesforce.
+ * @param handleRequestSuccess A function to execute when the request ultimately executes successfully.
+ * @param handleRequestFailure A function to execute when the salesforce request ultimately fails (for some reason other than token expiration)
  */
-function getSalesforceAppUserID( $firebaseUid ) {
-    // see if we've already saved the appUserID for this firebase user
-    $cachedID = getCachedAppUserID( $firebaseUid );
+function makeSalesforceRequestWithTokenExpirationCheck( $makeSalesforceRequest, $handleRequestSuccess, $handleRequestFailure ) {
+    $makeSalesforceRequest()->then(
+        $handleRequestSuccess,
+        function( $e ) use ($makeSalesforceRequest, $handleRequestFailure, $handleRequestSuccess) {
+            // find out if the error was due to an expired token
+            if ( method_exists($e, 'getResponse') && !empty($e->getResponse()) && !empty($e->getResponse()->getBody())  ) {
+                $response = $e->getResponse();
+                $bodyString = (string)$response->getBody();
+                $body = getJsonBodyFromResponse( $response );
+                // check if the token was expired so we can refresh it
+                if (
+                    $response->getStatusCode() === 401 &&
+                    isset( $body[0] ) &&
+                    isset( $body[0]->errorCode ) &&
+                    $body[0]->errorCode === 'INVALID_SESSION_ID'
+                ) {
+                    // refresh the token.
+                    refreshSalesforceTokenAsync()->then( function() use ($makeSalesforceRequest, $handleRequestFailure, $handleRequestSuccess) {
+                        // make the original request again.
+                        $makeSalesforceRequest()->then( $handleRequestSuccess, $handleRequestFailure );
+                    }, $handleRequestFailure );
+                } else {
+                    throw $e;
+                }
+            } else {
+                throw $e;
+            }
+        }
+    )->then(
+        function() {},
+        $handleRequestFailure
+    );
+}
+
+
+/**
+ * Returns a promise which resolves with a string representing the ContactID from a local cache, or fetches it from salesforce.
+ * Rejects with an error message if there is no Contact entry in salesforce that is associated with the given firebaseUid
+ */
+function getSalesforceContactID( $firebaseUid ) {
+    // see if we've already saved the contactID for this firebase user
+    $cachedID = getCachedContactID( $firebaseUid );
     if ( $cachedID !== false ) {
         // return a promise with the saved ID
         $deferred = new \React\Promise\Deferred();
@@ -87,28 +140,28 @@ function getSalesforceAppUserID( $firebaseUid ) {
         return $deferred->promise();
     }
 
-    return getAllSalesforceQueryRecordsAsync( "SELECT Id from TAT_App_User__c WHERE Firebase_UID__c = '$firebaseUid'" )->then(
+    return getAllSalesforceQueryRecordsAsync( "SELECT Id from Contact WHERE TAT_App_Firebase_UID__c = '$firebaseUid'" )->then(
         function( $queryRecords ) use ($firebaseUid) {
             if ( sizeof($queryRecords) === 0 ) {
                  // return some expected error so that the app can know when the user is a new user (has no salesforce entry).
                 throw new Exception( json_encode((object)array(
                     'errorCode' => 'FIREBASE_USER_NOT_IN_SALESFORCE',
-                    'message' => 'The specified Firebase user does not have a TAT App user account in Salesforce.'
+                    'message' => 'The specified Firebase user does not have an associated Contact entry in Salesforce'
                 )));
             }
-            $appUserID = $queryRecords[0]->Id;
+            $contactID = $queryRecords[0]->Id;
             // write the ID to file so we can avoid this http request in the future
-            cacheAppUserID( $firebaseUid, $appUserID );
-            return $appUserID;
+            cacheContactID( $firebaseUid, $contactID );
+            return $contactID;
         }
     );
 }
 
 
 /**
- * Returns a string representing the AppUserID from a local cache, or returns false if not present.
+ * Returns a string representing the ContactID from a local cache, or returns false if not present.
  */
-function getCachedAppUserID( $firebaseUid ) {
+function getCachedContactID( $firebaseUid ) {
     global $jsonCacheFilepath, $sqliteCacheFilepath;
     // the cache may be saved as a json file, or saved in a sqlite db
     if ( class_exists('SQLite3') && file_exists($sqliteCacheFilepath) ) {
@@ -118,13 +171,13 @@ function getCachedAppUserID( $firebaseUid ) {
         $row = $result->fetchArray();
         $db->close();
         if ( $row ) {
-            return $row['appUserID'];
+            return $row['contactID'];
         }
     } else if ( file_exists($jsonCacheFilepath) ) {
         // load from json file
-        $appUserIdCache = json_decode( file_get_contents($jsonCacheFilepath) );
-        if ( isset($appUserIdCache->$firebaseUid) ) {
-            return $appUserIdCache->$firebaseUid;
+        $contactIdCache = json_decode( file_get_contents($jsonCacheFilepath) );
+        if ( isset($contactIdCache->$firebaseUid) ) {
+            return $contactIdCache->$firebaseUid;
         }
     }
 
@@ -132,29 +185,29 @@ function getCachedAppUserID( $firebaseUid ) {
 }
 
 /**
- * Saves a firebaseUid value and associated appUserID value to either a SQLite database or a json file, depending on whether
+ * Saves a firebaseUid value and associated contactID value to either a SQLite database or a json file, depending on whether
  * SQLite3 is installed.
  */
-function cacheAppUserID( $firebaseUid, $appUserID ) {
+function cacheContactID( $firebaseUid, $contactID ) {
     global $jsonCacheFilepath, $sqliteCacheFilepath;
     // try saving to sqlite db first, then to a json file
     if ( class_exists('SQLite3') ) {
         $db = new SQLite3( $sqliteCacheFilepath );
         // check if the cache table exists and create it if it doesn't
-        $db->exec( "CREATE TABLE IF NOT EXISTS cache (id INTEGER PRIMARY KEY AUTOINCREMENT, firebaseUid TEXT, appUserID TEXT)" );
+        $db->exec( "CREATE TABLE IF NOT EXISTS cache (id INTEGER PRIMARY KEY AUTOINCREMENT, firebaseUid TEXT, contactID TEXT)" );
         // add the value to the cache table
-        $db->exec( "INSERT INTO cache (firebaseUid, appUserID) VALUES ('$firebaseUid', '$appUserID')" );
+        $db->exec( "INSERT INTO cache (firebaseUid, contactID) VALUES ('$firebaseUid', '$contactID')" );
         $db->close();
     } else {
         // read the existing file if there is one
         if ( file_exists($jsonCacheFilepath) ) {
-            $appUserIdCache = json_decode( file_get_contents($jsonCacheFilepath) );
+            $contactIdCache = json_decode( file_get_contents($jsonCacheFilepath) );
         } else {
-            $appUserIdCache = (object)array();
+            $contactIdCache = (object)array();
         }
         // add the new cache value to the file
-        $appUserIdCache->$firebaseUid = $appUserID;
-        file_put_contents( $jsonCacheFilepath, json_encode($appUserIdCache) );
+        $contactIdCache->$firebaseUid = $contactID;
+        file_put_contents( $jsonCacheFilepath, json_encode($contactIdCache) );
     }
 }
 

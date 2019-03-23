@@ -119,6 +119,15 @@ input {
     font-size: 90%;
 }
 
+.api-docs h2 {
+    font-style: italic;
+    margin-top: 3em;
+    border-bottom: 4px double #888;
+    padding-bottom: 0.5em;
+    margin-bottom: 1.5em;
+    color: #050;
+}
+
 
 /* loading spinner */
 .loading {
