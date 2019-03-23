@@ -124,6 +124,12 @@ require_once( 'functions.php' );
     message: "There is no Contact that has the specified email address or phone number."
 }</pre>
 
+		<p>If there is a matching Contact, but it already has an associated Firebase user account, the API returns this error:</p>
+		<pre>{
+    errorCode: "ENTRY_ALREADY_HAS_ACCOUNT",
+    message: "There is already a user account associated with this Contact entry."
+}</pre>
+
 		<h3>Example request</h3>
 		<p>URL:</p>
 		<pre>GET /api/contactSearch?email=joe.blow@example.com&phone=5559092332</pre>

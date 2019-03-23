@@ -19,7 +19,7 @@ $apiFunctions = array();
  */
 $apiFunctions['contactSearch'] = function( $email, $phone ) {
     // construct the query
-    $query = "SELECT Id from Contact WHERE ";
+    $query = "SELECT Id, TAT_App_Firebase_UID__c from Contact WHERE ";
 
     // match any one of several email fields
     $emailFields = array( 'npe01__HomeEmail__c', 'npe01__WorkEmail__c', 'npe01__AlternateEmail__c' );
@@ -52,7 +52,16 @@ $apiFunctions['contactSearch'] = function( $email, $phone ) {
     )->then( function($records) {
         // if a record was found, return the Id of the first one. Otherwise return false.
         if ( sizeof($records) > 0 ) {
-            return $records[0]->Id;
+            // check if the returned record already has an associated firebase UID
+            if ( empty($records[0]->TAT_App_Firebase_UID__c) ) {
+                return $records[0]->Id;
+            } else {
+                // return some expected error so the app knows that the matching Contact already has an associated firebase account
+                throw new Exception( json_encode((object)array(
+                    'errorCode' => 'ENTRY_ALREADY_HAS_ACCOUNT',
+                    'message' => 'There is already a user account associated with this Contact entry.'
+                )));
+            }
         } else {
             // return some expected error so that the app can know when no Contact entry matches the given email/phone
             throw new Exception( json_encode((object)array(
