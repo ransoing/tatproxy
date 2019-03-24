@@ -11,7 +11,7 @@ require_once( '../api-core-functions.php' );
 
 // process the GET parameters
 if ( !isset($_GET['email']) || !isset($_GET['phone']) ) {
-    errorExit( 400, 'You must defined both GET parameters "email" and "phone".' );
+    errorExit( 400, 'You must define both GET parameters "email" and "phone".' );
 }
 
 

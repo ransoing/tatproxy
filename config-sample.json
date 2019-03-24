@@ -8,5 +8,8 @@
     "firebase": {
         "apiKey": "KRkBdyxvgyS4XVAEaQyQn1fvctDbAcIzHS4tvDy",
         "projectId": "some-project-name"
+    },
+    "app": {
+        "registrationPassword": "correct-horse-battery-staple"
     }
 }

@@ -94,6 +94,11 @@ require_once( 'functions.php' );
 	<div class="api-docs">
 		<h1>API</h1>
 
+		<a href="#contactSearch">contactSearch</a><br>
+		<a href="#getUserData">getUserData</a><br>
+		<a href="#startRegistration">startRegistration</a>
+
+		<a name="contactSearch"></a>
 		<h2>contactSearch</h2>
 		<p>
 			<b>contactSearch</b> searches for Salesforce Contact objects by email address or phone number. If any Contact object has either the given
@@ -135,6 +140,7 @@ require_once( 'functions.php' );
 		<pre>GET /api/contactSearch?email=joe.blow@example.com&phone=5559092332</pre>
 
 
+		<a name="getUserData"></a>
 		<h2>getUserData</h2>
 		<p><b>getUserData</b> provides a way for the TAT mobile app to get a user's data.</p>
 
@@ -252,8 +258,41 @@ require_once( 'functions.php' );
 		<p>Request body:</p>
 		<pre>{ "firebaseIdToken": "abcd1234" }</pre>
 
+
+		<a name="startRegistration"></a>
+		<h2>startRegistration</h2>
+		<p>
+			<b>startRegistration</b> verifies whether a password is correct.
+		</p>
+
+		<h3>Make a GET request to:</h3>
+		<pre>/api/startRegistration?pass=[PASSWORD]</pre>
+
+		<h3>GET parameters</h3>
+		<section>
+			<div>
+				<p><code>pass</code> {string} (required)</p>
+				<p class="api-def">The password required to start the new account registration process.</p>
+			</div>
+		</section>
+
+		<h3>Response payload</h3>
+		<p>The API returns this JSON object if the password is correct:</p>
+		<pre>{
+    success: true
+}</pre>
+		<p>If the password is incorrect, the API returns this error:</p>
+		<pre>{
+    errorCode: "INCORRECT_PASSWORD",
+    message: "The password was incorrect."
+}</pre>
+
+		<h3>Example request</h3>
+		<p>URL:</p>
+		<pre>GET /api/startRegistration?pass=correct-horse-battery-staple</pre>
+
 	</div>
-	
+
 </main>
 </body>
 </html>
