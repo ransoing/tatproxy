@@ -132,7 +132,7 @@ $apiFunctions['getUserData']['hoursLogs'] = function ( $contactID ) {
 $apiFunctions['getUserData']['unfinishedOutreachTargets'] = function ( $contactID ) {
     $promises = array(
         // get all outreach targets
-        getAllSalesforceQueryRecordsAsync( "SELECT Id, Location_Name__c, Location_Type__c, TAT_App_Materials_Address__c, TAT_App_Materials_City__c, TAT_App_Materials_State__c, TAT_App_Materials_Zip__c FROM TAT_App_Outreach_Target__c WHERE Contact__c = '$contactID'" ),
+        getAllSalesforceQueryRecordsAsync( "SELECT Id, Location_Name__c, Location_Type__c, Materials_Mailing_Address__c, Materials_Mailing_City__c, Materials_Mailing_State__c, Materials_Mailing_Zip__c FROM TAT_App_Outreach_Target__c WHERE Contact__c = '$contactID'" ),
         // get all outreach reports
         getAllSalesforceQueryRecordsAsync( "SELECT Follow_Up_Date__c, Accomplishments__c, Outreach_Target__c FROM TAT_App_Outreach_Report__c WHERE Outreach_Target__r.Contact__c = '$contactID'" )
     );
@@ -177,8 +177,11 @@ $apiFunctions['getUserData']['unfinishedOutreachTargets'] = function ( $contactI
             }
 
             return array(
-                'unfinishedOutreachTargets' => $outreachTargets
+                'unfinishedOutreachTargets' => $outreachTargets,
+                'unfinishedEvents' => array() // @@ delete this once unfinished events is hashed out
             );
         }
     );
 };
+
+// @@ add unfinished events. The app will need to query for UnfinishedEvents as well.

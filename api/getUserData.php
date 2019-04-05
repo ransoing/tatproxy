@@ -62,8 +62,9 @@ getSalesforceContactID( $firebaseUid )->then(
     // Use the Contact ID to make all http requests. If any of them fail, check if the failure is due to
     // an expired token. If it is, refresh the token and try the requests again.
     function() use ($makeRequests, $handleRequestFailure, $handleRequestSuccess) {
-        makeSalesforceRequestWithTokenExpirationCheck( $makeRequests, $handleRequestSuccess, $handleRequestFailure );
-    }
+        return makeSalesforceRequestWithTokenExpirationCheck( $makeRequests, $handleRequestSuccess, $handleRequestFailure );
+    },
+    $handleRequestFailure
 );
 
 $loop->run();

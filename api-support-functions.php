@@ -92,7 +92,7 @@ function verifyFirebaseLogin() {
  * @param handleRequestFailure A function to execute when the salesforce request ultimately fails (for some reason other than token expiration)
  */
 function makeSalesforceRequestWithTokenExpirationCheck( $makeSalesforceRequest, $handleRequestSuccess, $handleRequestFailure ) {
-    $makeSalesforceRequest()->then(
+    return $makeSalesforceRequest()->then(
         $handleRequestSuccess,
         function( $e ) use ($makeSalesforceRequest, $handleRequestFailure, $handleRequestSuccess) {
             // find out if the error was due to an expired token
@@ -108,9 +108,9 @@ function makeSalesforceRequestWithTokenExpirationCheck( $makeSalesforceRequest, 
                     $body[0]->errorCode === 'INVALID_SESSION_ID'
                 ) {
                     // refresh the token.
-                    refreshSalesforceTokenAsync()->then( function() use ($makeSalesforceRequest, $handleRequestFailure, $handleRequestSuccess) {
+                    return refreshSalesforceTokenAsync()->then( function() use ($makeSalesforceRequest, $handleRequestFailure, $handleRequestSuccess) {
                         // make the original request again.
-                        $makeSalesforceRequest()->then( $handleRequestSuccess, $handleRequestFailure );
+                        return $makeSalesforceRequest()->then( $handleRequestSuccess, $handleRequestFailure );
                     }, $handleRequestFailure );
                 } else {
                     throw $e;
@@ -120,7 +120,7 @@ function makeSalesforceRequestWithTokenExpirationCheck( $makeSalesforceRequest, 
             }
         }
     )->then(
-        function() {},
+        function($r) { return $r; },
         $handleRequestFailure
     );
 }
@@ -140,21 +140,27 @@ function getSalesforceContactID( $firebaseUid ) {
         return $deferred->promise();
     }
 
-    return getAllSalesforceQueryRecordsAsync( "SELECT Id from Contact WHERE TAT_App_Firebase_UID__c = '$firebaseUid'" )->then(
-        function( $queryRecords ) use ($firebaseUid) {
-            if ( sizeof($queryRecords) === 0 ) {
-                 // return some expected error so that the app can know when the user is a new user (has no salesforce entry).
-                throw new Exception( json_encode((object)array(
-                    'errorCode' => 'FIREBASE_USER_NOT_IN_SALESFORCE',
-                    'message' => 'The specified Firebase user does not have an associated Contact entry in Salesforce'
-                )));
-            }
-            $contactID = $queryRecords[0]->Id;
-            // write the ID to file so we can avoid this http request in the future
-            cacheContactID( $firebaseUid, $contactID );
-            return $contactID;
+    $request = function() use ($firebaseUid) {
+        return getAllSalesforceQueryRecordsAsync( "SELECT Id from Contact WHERE TAT_App_Firebase_UID__c = '$firebaseUid'" );
+    };
+    
+    $onSuccess = function( $queryRecords ) use ($firebaseUid) {
+        if ( sizeof($queryRecords) === 0 ) {
+            // return some expected error so that the app can know when the user is a new user (has no salesforce entry).
+            throw new Exception( json_encode((object)array(
+                'errorCode' => 'FIREBASE_USER_NOT_IN_SALESFORCE',
+                'message' => 'The specified Firebase user does not have an associated Contact entry in Salesforce'
+            )));
         }
-    );
+        $contactID = $queryRecords[0]->Id;
+        // write the ID to file so we can avoid this http request in the future
+        cacheContactID( $firebaseUid, $contactID );
+        return $contactID;
+    };
+
+    $onFail = function($e) { throw $e; };
+
+    return makeSalesforceRequestWithTokenExpirationCheck( $request, $onSuccess, $onFail );
 }
 
 

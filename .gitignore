@@ -1,5 +1,5 @@
 config.json
 sf-auth.json
-app-user-ids.json
-app-user-ids.sqlite
+contact-ids.json
+contact-ids.sqlite
 vendor/
