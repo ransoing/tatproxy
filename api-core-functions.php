@@ -130,12 +130,6 @@ $apiFunctions['getUserData']['hoursLogs'] = function ( $contactID ) {
  * URL: /api/getUserData?parts=unfinishedOutreachTargets
  */
 $apiFunctions['getUserData']['unfinishedOutreachTargets'] = function ( $contactID ) {
-    // @@
-    $deferred = new \React\Promise\Deferred();
-    $deferred->resolve( array('unfinishedOutreachTargets' => []) );
-    return $deferred->promise();
-    // @@
-    
     $promises = array(
         // get all outreach targets
         getAllSalesforceQueryRecordsAsync( "SELECT Id, Location_Name__c, Location_Type__c, Materials_Mailing_Address__c, Materials_Mailing_City__c, Materials_Mailing_State__c, Materials_Mailing_Zip__c FROM TAT_App_Outreach_Target__c WHERE Contact__c = '$contactID'" ),
