@@ -94,15 +94,79 @@ require_once( 'functions.php' );
 	<div class="api-docs">
 		<h1>API</h1>
 
-		<a href="#contactSearch">contactSearch</a><br>
-		<a href="#getUserData">getUserData</a><br>
-		<a href="#startRegistration">startRegistration</a>
+		<a name="required-post-headers"></a>
+		<h3 style="margin-top:2em">Required POST headers</h3>
+		<p>All POST requests to the API must include one of the following headers, depending on how you are passing data to the API:</p>
+		<pre>Content-Type: application/x-www-form-urlencoded</pre>
+		<pre>Content-Type: application/json</pre>
 
+		<a name="error-format"></a>
+		<h3 style="margin-top: 2em">Error responses</h3>
+		<p>If a request results in an error, the API will return a 400 http response code and return a JSON-formatted object like the following:</p>
+		<pre>{
+    errorCode: "SOME_ERROR_CODE",
+    message: "A short description of the error."
+}</pre>
+		<p>The documentation for each method lists the different possible error codes.</p>
+
+		<hr style="margin: 4em 0">
+		
+		<h3>Methods</h3>
+		<ul class="api-links">
+			<li><a href="#checkRegistrationCode">checkRegistrationCode</a></li>
+			<li><a href="#contactSearch">contactSearch</a></li>
+			<li><a href="#createNewUser">createNewUser</a></li>
+			<li><a href="#updateUser">updateUser</a></li>
+			<li><a href="#getUserData">getUserData</a></li>
+			<li><a href="#createHoursLogEntry">createHoursLogEntry</a></li>
+			<li><a href="#createTestimonial">createTestimonial</a></li>
+			<li><a href="#createTrainingVideoFeedback">createTrainingVideoFeedback</a></li>
+			<li><a href="#createPreOutreachSurvey">createPreOutreachSurvey</a></li>
+			<li><a href="#createPostOutreachReport">createPostOutreachReport</a></li>
+		</ul>
+
+		<!-- ==================================== -->
+		<a name="checkRegistrationCode"></a>
+		<h2>checkRegistrationCode</h2>
+		<p>
+			<b>checkRegistrationCode</b> verifies whether a registration code is valid.
+		</p>
+
+		<h3>Make a GET request to:</h3>
+		<pre>/api/checkRegistrationCode?code=[CODE]</pre>
+
+		<h3>GET parameters</h3>
+		<section>
+			<div>
+				<p><code>code</code> {string} (required)</p>
+				<p>The code (password) required to create a new user account.</p>
+			</div>
+		</section>
+
+		<h3>Response payload</h3>
+		<pre>{
+    success: true
+}</pre>
+
+		<h3>Error codes <a class="help" href="#error-format">?</a></h3>
+		<section>
+			<div>
+				<p><code>INCORRECT_REGISTRATION_CODE</code></p>
+				<p>The provided registration code was incorrect.</p>
+			</div>
+		</section>
+
+		<h3>Example request</h3>
+		<pre>GET /api/checkRegistrationCode?code=correct-horse-battery-staple</pre>
+
+
+		<!-- ==================================== -->
 		<a name="contactSearch"></a>
 		<h2>contactSearch</h2>
 		<p>
-			<b>contactSearch</b> searches for Salesforce Contact objects by email address or phone number. If any Contact object has either the given
-			email address or phone number, then that Contact's Id is returned.
+			<b>contactSearch</b> searches via email address or phone number for Salesforce Contact objects which are
+			not associated with Firebase user accounts. If any unassociated Contact object has either the given email
+			address or phone number, then that Contact's Id is returned.
 		</p>
 
 		<h3>Make a GET request to:</h3>
@@ -112,34 +176,205 @@ require_once( 'functions.php' );
 		<section>
 			<div>
 				<p><code>email</code> {string} (required)</p>
-				<p class="api-def">An email address. For example, <code>joe.somebody@example.com</code></p>
+				<p>An email address. For example, <code>joe.somebody@example.com</code></p>
+			</div>
+			<div>
 				<p><code>phone</code> {string} (required)</p>
-				<p class="api-def">A phone number in any format. The format doesn't matter. For example, <code>5551234567</code> or <code>(555) 123-4567</code>.</p>
+				<p>A phone number in any format. The format doesn't matter. For example, <code>5551234567</code> or <code>(555) 123-4567</code>.</p>
 			</div>
 		</section>
 
 		<h3>Response payload</h3>
-		<p>The API returns a JSON object containing a matching Salesforce Contact Id.</p>
 		<pre>{
     salesforceId: {string}
 }</pre>
-		<p>If there is no matching Contact in Salesforce, the API returns this error:</p>
-		<pre>{
-    errorCode: "NO_MATCHING_ENTRY",
-    message: "There is no Contact that has the specified email address or phone number."
-}</pre>
 
-		<p>If there is a matching Contact, but it already has an associated Firebase user account, the API returns this error:</p>
-		<pre>{
-    errorCode: "ENTRY_ALREADY_HAS_ACCOUNT",
-    message: "There is already a user account associated with this Contact entry."
-}</pre>
+		<h3>Error codes <a class="help" href="#error-format">?</a></h3>
+		<section>
+			<div>
+				<p><code>NO_MATCHING_ENTRY</code></p>
+				<p>There is no matching Contact in Salesforce.</p>
+			</div>
+			<div>
+				<p><code>ENTRY_ALREADY_HAS_ACCOUNT</code></p>
+				<p>There is a matching Contact, but it already has an associated Firebase user account.</p>
+			</div>
+		</section>
 
 		<h3>Example request</h3>
-		<p>URL:</p>
 		<pre>GET /api/contactSearch?email=joe.blow@example.com&phone=5559092332</pre>
 
 
+		<!-- ==================================== -->
+		<a name="createNewUser"></a>
+		<h2>createNewUser</h2>
+		<p><b>createNewUser</b> creates a new app user by associating a firebase uid with a Contact entry in Salesforce, creating a new Contact if needed.</p>
+
+		<h3>Make a POST request to:</h3>
+		<pre>/api/createNewUser</pre>
+
+		<h3>POST request body payload parameters</h3>
+		<section>
+			<div>
+				<p><code>firebaseIdToken</code> {string} (required)</p>
+				<p>
+					<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
+					from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
+					login state, and access various Firebase resources.
+				</p>
+			</div>
+			<div>
+				<p><code>registrationCode</code> {string} (required)</p>
+				<p>A code (password) required to create a new user account. This is <b>not</b> the user's password.</p>
+			</div>
+			<div>
+				<p><code>salesforceId</code> {string}</p>
+				<p>The ID of a Contact object in Salesforce. If provided, the Contact object will be updated with the app user's data.
+					If not provided, a new Contact object will be created.
+				</p>
+			</div>
+			<div>
+				<p><code>email</code> {string}</p>
+				<p>The user's email address. Required if <code>salesforceId</code> is not provided.</p>
+			</div>
+			<div>
+				<p><code>phone</code> {string}</p>
+				<p>The user's phone number. Required if <code>salesforceId</code> is not provided.</p>
+			</div>
+			<div>
+				<p><code>firstName</code> {string}</p>
+				<p>The user's first name. Required if <code>salesforceId</code> is not provided.</p>
+			</div>
+			<div>
+				<p><code>lastName</code> {string}</p>
+				<p>The user's last name. Required if <code>salesforceId</code> is not provided.</p>
+			</div>
+			<div>
+				<p><code>volunteerType</code> {string} (required)</p>
+				<p>The type of volunteer. Valid values are <code>truckStopVolunteer</code>, <code>freedomDriversVolunteer</code>, and <code>ambassadorVolunteer</code>.</p>
+			</div>
+			<div>
+				<p><code>mailingAddress</code> {string}</p>
+				<p>The street address part of the user's mailing address.</p>
+			</div>
+			<div>
+				<p><code>mailingCity</code> {string}</p>
+				<p>The city of the user's mailing address.</p>
+			</div>
+			<div>
+				<p><code>mailingState</code> {string}</p>
+				<p>The state of the user's mailing address.</p>
+			</div>
+			<div>
+				<p><code>mailingZip</code> {string}</p>
+				<p>The zip code of the user's mailing address.</p>
+			</div>
+			<div>
+				<p><code>partOfTeam</code> {string}</p>
+				<p>Whether the user is part of a volunteer team. Valid values are <code>yes</code> or <code>no</code>.</p>
+			</div>
+			<div>
+				<p><code>isCoordinator</code> {string}</p>
+				<p>Whether the user is a team coordinator. Valid values are <code>yes</code> or <code>no</code>.</p>
+			</div>
+			<div>
+				<p><code>coordinatorName</code> {string}</p>
+				<p>The name of the user's volunteer team coordinator.</p>
+			</div>
+		</section>
+		
+		<h3>Response payload</h3>
+		<pre>{
+    contactId: {string} // the ID of the updated or newly created Contact object in Salesforce
+}</pre>
+		
+		<h3>Error codes <a class="help" href="#error-format">?</a></h3>
+		<section>
+			<div>
+				<p><code>INCORRECT_REGISTRATION_CODE</code></p>
+				<p>The provided registration code was incorrect.</p>
+			</div>
+		</section>
+
+		<h3>Example request</h3>
+		<pre>// URL:
+POST /api/createNewUser
+
+// Headers:
+Content-Type: application/json
+
+// Request body:
+{
+    "firebaseIdToken": "abcd1234",
+    "registrationCode": "correct-horse-battery-staple",
+    "salesforceId": "JOF7EK0enoejMOE8",
+    "volunteerType": "truckStopVolunteer",
+    "partOfTeam": "yes",
+    "isCoordinator": "yes"
+}</pre>
+
+
+		<!-- ==================================== -->
+		<a name="updateUser"></a>
+		<h2>updateUser</h2>
+		<p><b>updateUser</b> updates fields on an existing user account.</p>
+
+		<h3>Make a POST request to:</h3>
+		<pre>/api/updateUser</pre>
+
+		<h3>POST request body payload parameters</h3>
+		<section>
+			<div>
+				<p><code>firebaseIdToken</code> {string} (required)</p>
+				<p>
+					<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
+					from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
+					login state, and access various Firebase resources.
+				</p>
+			</div>
+			<div>
+				<p><code>volunteerType</code> {string} (required)</p>
+				<p>The type of volunteer. Valid values are <code>truckStopVolunteer</code>, <code>freedomDriversVolunteer</code>, and <code>ambassadorVolunteer</code>.</p>
+			</div>
+			<div>
+				<p><code>mailingAddress</code> {string}</p>
+				<p>The street address part of the user's mailing address.</p>
+			</div>
+			<div>
+				<p><code>mailingCity</code> {string}</p>
+				<p>The city of the user's mailing address.</p>
+			</div>
+			<div>
+				<p><code>mailingState</code> {string}</p>
+				<p>The state of the user's mailing address.</p>
+			</div>
+			<div>
+				<p><code>mailingZip</code> {string}</p>
+				<p>The zip code of the user's mailing address.</p>
+			</div>
+		</section>
+		
+		<h3>Response payload</h3>
+		<pre>{
+    success: true
+}</pre>
+		
+		<h3>Example request</h3>
+		<pre>// URL:
+POST /api/createNewUser
+
+// Headers:
+Content-Type: application/json
+
+// Request body:
+{
+    "firebaseIdToken": "abcd1234",
+    "volunteerType": "truckStopVolunteer",
+    "mailingAddress": "1234 example st."
+}</pre>
+
+
+		<!-- ==================================== -->
 		<a name="getUserData"></a>
 		<h2>getUserData</h2>
 		<p><b>getUserData</b> provides a way for the TAT mobile app to get a user's data.</p>
@@ -148,17 +383,15 @@ require_once( 'functions.php' );
 		<pre>/api/getUserData?parts=[LIST_OF_PARTS]</pre>
 
 		<h3>Required headers</h3>
-		<p>One of the following headers must be present in the request:</p>
-		<pre>Content-Type: application/x-www-form-urlencoded</pre>
-		<pre>Content-Type: application/json</pre>
+		<p>See the section on <a href="#required-post-headers">required POST headers</a>.</p>
 
 		<h3>GET parameters</h3>
 		<section>
 			<div>
 				<p><code>parts</code> {string} (required)</p>
-				<p class="api-def">
+				<p>
 					A comma-separated list of values. These values define what data will be returned.<br>
-					Acceptable values are: <code>basic</code>, <code>hoursLogs</code>, <code>unfinishedOutreachTargets</code>.<br>
+					Acceptable values are: <code>basic</code>, <code>hoursLogs</code>, <code>unfinishedOutreachTargets</code>.
 				</p>
 			</div>
 		</section>
@@ -167,10 +400,10 @@ require_once( 'functions.php' );
 		<section>
 			<div>
 				<p><code>firebaseIdToken</code> {string} (required)</p>
-				<p class="api-def">
-					<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retireved
+				<p>
+					<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
 					from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
-					login state, and access various Firebase resources.<br>
+					login state, and access various Firebase resources.
 				</p>
 			</div>
 		</section>
@@ -241,55 +474,337 @@ require_once( 'functions.php' );
     ]
 }</pre>
 
-		<p>
-			If the user defined by the firebaseIdToken does not have an entry in Salesforce, the API will return the following
-			response with a 400 HTTP response code:
-		</p>
-		<pre>{
-    errorCode: "FIREBASE_USER_NOT_IN_SALESFORCE",
-    message: "The specified Firebase user does not have an associated Contact entry in Salesforce."
-}</pre>
-
-		<h3>Example request</h3>
-		<p>URL:</p>
-		<pre>POST /api/getUserData?parts=basic,hoursLogs,unfinishedOutreachTargets</pre>
-		<p>Headers:</p>
-		<pre>Content-Type: application/json</pre>
-		<p>Request body:</p>
-		<pre>{ "firebaseIdToken": "abcd1234" }</pre>
-
-
-		<a name="startRegistration"></a>
-		<h2>startRegistration</h2>
-		<p>
-			<b>startRegistration</b> verifies whether a password is correct.
-		</p>
-
-		<h3>Make a GET request to:</h3>
-		<pre>/api/startRegistration?pass=[PASSWORD]</pre>
-
-		<h3>GET parameters</h3>
+		<h3>Error codes <a class="help" href="#error-format">?</a></h3>
 		<section>
 			<div>
-				<p><code>pass</code> {string} (required)</p>
-				<p class="api-def">The password required to start the new account registration process.</p>
+				<p><code>FIREBASE_USER_NOT_IN_SALESFORCE</code></p>
+				<p>The user defined by the firebaseIdToken does not have an entry in Salesforce.</p>
 			</div>
 		</section>
 
+		<h3>Example request</h3>
+		<pre>// URL:
+POST /api/getUserData?parts=basic,hoursLogs,unfinishedOutreachTargets
+
+// Headers:
+Content-Type: application/json
+
+// Request body:
+{ "firebaseIdToken": "abcd1234" }</pre>
+
+
+
+		<!-- ==================================== -->
+		<a name="createHoursLogEntry"></a>
+		<h2>createHoursLogEntry</h2>
+		<p><b>createHoursLogEntry</b> adds a log entry associated with a user, about the volunteer tasks that the user has performed.</p>
+
+		<h3>Make a POST request to:</h3>
+		<pre>/api/createHoursLogEntry</pre>
+
+		<h3>POST request body payload parameters</h3>
+		<section>
+			<div>
+				<p><code>firebaseIdToken</code> {string} (required)</p>
+				<p>
+					<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
+					from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
+					login state, and access various Firebase resources.
+				</p>
+			</div>
+			<div>
+				<p><code>description</code> {string} (required)</p>
+				<p>A description of the task performed.</p>
+			</div>
+			<div>
+				<p><code>date</code> {string, YYYY-MM-DD} (required)</p>
+				<p>The date of the task.</p>
+			</div>
+			<div>
+				<p><code>numHours</code> {string}</p>
+				<p>The number of hours spent volunteering.</p>
+			</div>
+		</section>
+		
 		<h3>Response payload</h3>
-		<p>The API returns this JSON object if the password is correct:</p>
 		<pre>{
     success: true
 }</pre>
-		<p>If the password is incorrect, the API returns this error:</p>
+
+		<h3>Example request</h3>
+		<pre>// URL:
+POST /api/createHoursLogEntry
+
+// Headers:
+Content-Type: application/json
+
+// Request body:
+{
+	"firebaseIdToken": "abcd1234",
+	"description": "Visited a truck stop to distribute TAT materials.",
+    "date": "2018-05-02",
+    "numHours": "5"
+}</pre>
+
+
+		<!-- ==================================== -->
+		<a name="createTestimonial"></a>
+		<h2>createTestimonial</h2>
+		<p><b>createTestimonial</b> adds the data from a testimonial/feedback survey to Salesforce.</p>
+
+		<h3>Make a POST request to:</h3>
+		<pre>/api/createTestimonial</pre>
+
+		<h3>POST request body payload parameters</h3>
+		<section>
+			<div>
+				<p><code>firebaseIdToken</code> {string} (required)</p>
+				<p>
+					<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
+					from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
+					login state, and access various Firebase resources.
+				</p>
+			</div>
+			<div>
+				<p><code>advice</code> {string}</p>
+				<p>Advice that the user would give other volunteers.</p>
+			</div>
+			<div>
+				<p><code>bestPart</code> {string}</p>
+				<p>The best part of the volunteer's experience.</p>
+			</div>
+			<div>
+				<p><code>improvements</code> {string}</p>
+				<p>Suggestions on how the volunteer experience could be improved.</p>
+			</div>
+			<div>
+				<p><code>givesAnonPermission</code> {string} (required)</p>
+				<p>Whether the user gives TAT permission to quote him anonymously. Valid values are <code>yes</code> or <code>no</code>.</p>
+			</div>
+			<div>
+				<p><code>givesNamePermission</code> {string} (required)</p>
+				<p>Whether the user gives TAT permission to use his name/organization in quotes and on social media. Valid values are <code>yes</code> or <code>no</code>.</p>
+			</div>
+		</section>
+		
+		<h3>Response payload</h3>
 		<pre>{
-    errorCode: "INCORRECT_PASSWORD",
-    message: "The password was incorrect."
+    success: true
 }</pre>
 
 		<h3>Example request</h3>
-		<p>URL:</p>
-		<pre>GET /api/startRegistration?pass=correct-horse-battery-staple</pre>
+		<pre>// URL:
+POST /api/createTestimonial
+
+// Headers:
+Content-Type: application/json
+
+// Request body:
+{
+    "firebaseIdToken": "abcd1234",
+    "advice": "Show your passion for volunteering",
+    "givesAnonPermission": "yes",
+    "givesNamePermission": "no"
+}</pre>
+
+
+		<!-- ==================================== -->
+		<a name="createTrainingVideoFeedback"></a>
+		<h2>createTrainingVideoFeedback</h2>
+		<p><b>createTrainingVideoFeedback</b> adds info to Salesforce regarding feedback on training videos, and marks that the user has watched the videos.</p>
+
+		<h3>Make a POST request to:</h3>
+		<pre>/api/createTrainingVideoFeedback</pre>
+
+		<h3>POST request body payload parameters</h3>
+		<section>
+			<div>
+				<p><code>firebaseIdToken</code> {string} (required)</p>
+				<p>
+					<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
+					from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
+					login state, and access various Firebase resources.
+				</p>
+			</div>
+			<div>
+				<p><code>feelsPrepared</code> {string} (required)</p>
+				<p>Whether the user feels prepared to volunteer after watching the training videos. Valid values are <code>yes</code> or <code>no</code>.</p>
+			</div>
+			<div>
+				<p><code>questions</code> {string}</p>
+				<p>Additional questions that the user has after watching the videos.</p>
+			</div>
+		</section>
+		
+		<h3>Response payload</h3>
+		<pre>{
+    success: true
+}</pre>
+
+		<h3>Example request</h3>
+		<pre>// URL:
+POST /api/createTestimonial
+
+// Headers:
+Content-Type: application/json
+
+// Request body:
+{
+    "firebaseIdToken": "abcd1234",
+    "feelsPrepared": "no",
+    "questions": "How do I properly ask people to donate to TAT?"
+}</pre>
+
+
+		<!-- ==================================== -->
+		<a name="createPreOutreachSurvey"></a>
+		<h2>createPreOutreachSurvey</h2>
+		<p><b>createPreOutreachSurvey</b> adds the data from a pre-outreach survey to Salesforce. If needed, a new Account object is created in Salesforce.</p>
+
+		<h3>Make a POST request to:</h3>
+		<pre>/api/createPreOutreachSurvey</pre>
+
+		<h3>POST request body payload parameters</h3>
+		<section>
+			<div>
+				<p><code>firebaseIdToken</code> {string} (required)</p>
+				<p>
+					<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
+					from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
+					login state, and access various Firebase resources.
+				</p>
+			</div>
+			<div>
+				<p><code>locationName</code> {string} (required)</p>
+				<p>A friendly name of the location to be visited.</p>
+			</div>
+			<div>
+				<p><code>locationType</code> {string} (required)</p>
+				<p>The type of location. Valid values are <code>cdlSchool</code>, <code>truckingCompany</code>, and <code>truckStop</code>.</p>
+			</div>
+			<div>
+				<p><code>locationAddress</code> {string} (required)</p>
+				<p>The street address of the location to be visited.</p>
+			</div>
+			<div>
+				<p><code>locationCity</code> {string} (required)</p>
+				<p>The city of the location to be visited.</p>
+			</div>
+			<div>
+				<p><code>locationState</code> {string} (required)</p>
+				<p>The state of the location to be visited.</p>
+			</div>
+			<div>
+				<p><code>zip</code> {string} (required)</p>
+				<p>The zip code of the location to be visited.</p>
+			</div>
+			<div>
+				<p><code>hasContactedManager</code> {string} (required)</p>
+				<p>Whether the user has contacted the manager of the location. Valid values are <code>yes</code> or <code>no</code>.</p>
+			</div>
+			<div>
+				<p><code>isReadyToReceive</code> {string}</p>
+				<p>Whether the user is ready to receive TAT materials. Valid values are <code>yes</code> or <code>no</code>.</p>
+			</div>
+			<div>
+				<p><code>mailingAddress</code> {string}</p>
+				<p>The street address to send TAT materials to.</p>
+			</div>
+			<div>
+				<p><code>mailingCity</code> {string}</p>
+				<p>The city to send TAT materials to.</p>
+			</div>
+			<div>
+				<p><code>mailingState</code> {string}</p>
+				<p>The state to send TAT materials to.</p>
+			</div>
+			<div>
+				<p><code>mailingZip</code> {string}</p>
+				<p>The zip code to send TAT materials to.</p>
+			</div>
+		</section>
+		
+		<h3>Response payload</h3>
+		<pre>{
+    success: true
+}</pre>
+
+		<h3>Example request</h3>
+		<pre>// URL:
+POST /api/createPreOutreachSurvey
+
+// Headers:
+Content-Type: application/json
+
+// Request body:
+{
+    "firebaseIdToken": "abcd1234",
+    "locationName": "Love's",
+    "locationAddress": "1234 Wowee St.",
+    "locationCity": "Blakefield",
+    "locationState": "OK",
+    "locationZip": "45454",
+    "hasContactedManager": "no"
+}</pre>
+
+
+		<!-- ==================================== -->
+		<a name="createPostOutreachReport"></a>
+		<h2>createPostOutreachReport</h2>
+		<p><b>createPostOutreachReport</b> adds the data from a post-outreach report to Salesforce. Each report should be considered as a follow-up to a pre-outreach survey.</p>
+
+		<h3>Make a POST request to:</h3>
+		<pre>/api/createPostOutreachReport</pre>
+
+		<h3>POST request body payload parameters</h3>
+		<section>
+			<div>
+				<p><code>firebaseIdToken</code> {string} (required)</p>
+				<p>
+					<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
+					from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
+					login state, and access various Firebase resources.
+				</p>
+			</div>
+			<div>
+				<p><code>preOutreachSurveyId</code> {string} (required)</p>
+				<p>The ID of a pre-outreach survey object in Salesforce.</p>
+			</div>
+			<div>
+				<p><code>accomplishments</code> {string} (required)</p>
+				<p>A list of the volunteer's accomplishments during his outreach work at the location and time specified by the pre-outreach survey.</p>
+			</div>
+			<div>
+				<p><code>willFollowUp</code> {string} (required)</p>
+				<p>Whether the user will follow up with management at the location. Valid values are <code>yes</code> or <code>no</code>.</p>
+			</div>
+			<div>
+				<p><code>followUpDate</code> {string, YYYY-MM-DD}</p>
+				<p>The date of the planned follow-up.</p>
+			</div>
+		</section>
+		
+		<h3>Response payload</h3>
+		<pre>{
+    success: true
+}</pre>
+
+		<h3>Example request</h3>
+		<pre>// URL:
+POST /api/createPostOutreachReport
+
+// Headers:
+Content-Type: application/json
+
+// Request body:
+{
+    "firebaseIdToken": "abcd1234",
+    "preOutreachSurveyId": "IOJEHW8nEhehoh",
+    "accomplishments": "Ate a sandwich, Turned over a new leaf, Fixed seven cars",
+    "willFollowUp": "yes",
+    "followUpDate": "2035-12-22"
+}</pre>
+
 
 	</div>
 
