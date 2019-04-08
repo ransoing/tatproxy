@@ -86,43 +86,36 @@ function verifyFirebaseLogin() {
 
 /**
  * Make some salesforce request(s), and if there was an error, find out if the error was due to an expired access token.
- * If it was, refresh the token and try the request again.
+ * If it was, refresh the token and try the request again. Returns a promise which resolves when the original salesforce
+ * request is ultimately made successfully, or rejects when the request fails for some reason other than token expiration.
  * @param makeSalesforceRequest A function which returns a promise. This function should make some request to salesforce.
- * @param handleRequestSuccess A function to execute when the request ultimately executes successfully.
- * @param handleRequestFailure A function to execute when the salesforce request ultimately fails (for some reason other than token expiration)
  */
-function makeSalesforceRequestWithTokenExpirationCheck( $makeSalesforceRequest, $handleRequestSuccess, $handleRequestFailure ) {
-    return $makeSalesforceRequest()->then(
-        $handleRequestSuccess,
-        function( $e ) use ($makeSalesforceRequest, $handleRequestFailure, $handleRequestSuccess) {
-            // find out if the error was due to an expired token
-            if ( method_exists($e, 'getResponse') && !empty($e->getResponse()) && !empty($e->getResponse()->getBody())  ) {
-                $response = $e->getResponse();
-                $bodyString = (string)$response->getBody();
-                $body = getJsonBodyFromResponse( $response );
-                // check if the token was expired so we can refresh it
-                if (
-                    $response->getStatusCode() === 401 &&
-                    isset( $body[0] ) &&
-                    isset( $body[0]->errorCode ) &&
-                    $body[0]->errorCode === 'INVALID_SESSION_ID'
-                ) {
-                    // refresh the token.
-                    return refreshSalesforceTokenAsync()->then( function() use ($makeSalesforceRequest, $handleRequestFailure, $handleRequestSuccess) {
-                        // make the original request again.
-                        return $makeSalesforceRequest()->then( $handleRequestSuccess, $handleRequestFailure );
-                    }, $handleRequestFailure );
-                } else {
-                    throw $e;
-                }
+function makeSalesforceRequestWithTokenExpirationCheck( $makeSalesforceRequest ) {
+    return $makeSalesforceRequest()->otherwise( function($e) use ($makeSalesforceRequest) {
+        // find out if the error was due to an expired token
+        if ( method_exists($e, 'getResponse') && !empty($e->getResponse()) && !empty($e->getResponse()->getBody()) ) {
+            $response = $e->getResponse();
+            $bodyString = (string)$response->getBody();
+            $body = getJsonBodyFromResponse( $response );
+            // check if the token was expired so we can refresh it
+            if (
+                $response->getStatusCode() === 401 &&
+                isset( $body[0] ) &&
+                isset( $body[0]->errorCode ) &&
+                $body[0]->errorCode === 'INVALID_SESSION_ID'
+            ) {
+                // refresh the token.
+                return refreshSalesforceTokenAsync()->then( function() use ($makeSalesforceRequest) {
+                    // make the original request again.
+                    return $makeSalesforceRequest();
+                });
             } else {
                 throw $e;
             }
+        } else {
+            throw $e;
         }
-    )->then(
-        function($r) { return $r; },
-        $handleRequestFailure
-    );
+    });
 }
 
 
@@ -143,8 +136,8 @@ function getSalesforceContactID( $firebaseUid ) {
     $request = function() use ($firebaseUid) {
         return getAllSalesforceQueryRecordsAsync( "SELECT Id from Contact WHERE TAT_App_Firebase_UID__c = '$firebaseUid'" );
     };
-    
-    $onSuccess = function( $queryRecords ) use ($firebaseUid) {
+
+    return makeSalesforceRequestWithTokenExpirationCheck( $request )->then( function($queryRecords) use ($firebaseUid) {
         if ( sizeof($queryRecords) === 0 ) {
             // return some expected error so that the app can know when the user is a new user (has no salesforce entry).
             throw new Exception( json_encode((object)array(
@@ -156,11 +149,7 @@ function getSalesforceContactID( $firebaseUid ) {
         // write the ID to file so we can avoid this http request in the future
         cacheContactID( $firebaseUid, $contactID );
         return $contactID;
-    };
-
-    $onFail = function($e) { throw $e; };
-
-    return makeSalesforceRequestWithTokenExpirationCheck( $request, $onSuccess, $onFail );
+    });
 }
 
 
@@ -369,24 +358,18 @@ function refreshSalesforceTokenAsync() {
  * example:
  * createNewSFOjbject( 'iojewfoij32', '/sobjects/Contact/', array('Name'=>'Bob') );
  */
-function createNewSFObject( $firebaseUid, $sfUrl, $sfData, $handleRequestFailure, $contactIDFieldName = false ) {
+function createNewSFObject( $firebaseUid, $sfUrl, $sfData, $contactIDFieldName = false ) {
     // Get the ID of the Contact entry in salesforce
-    return getSalesforceContactID( $firebaseUid )->then(
-        function( $contactID ) use ($sfUrl, $sfData, $handleRequestFailure, $contactIDFieldName) {
-            // we've now verified that the user has a valid Contact ID in salesforce
-            if ( $contactIDFieldName ) {
-                $sfData[$contactIDFieldName] = $contactID;
-            }
-            // create a new object
-            return makeSalesforceRequestWithTokenExpirationCheck(
-                function() use ($sfUrl, $sfData) {
-                    return salesforceAPIPostAsync( $sfUrl, $sfData );
-                },
-                function($r) { return $r; },
-                $handleRequestFailure
-            );
+    return getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($sfUrl, $sfData, $contactIDFieldName) {
+        // we've now verified that the user has a valid Contact ID in salesforce
+        if ( $contactIDFieldName ) {
+            $sfData[$contactIDFieldName] = $contactID;
         }
-    );
+        // create a new object in salesforce
+        return makeSalesforceRequestWithTokenExpirationCheck( function() use ($sfUrl, $sfData) {
+            return salesforceAPIPostAsync( $sfUrl, $sfData );
+        });
+    });
 }
 
 
