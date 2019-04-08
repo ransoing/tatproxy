@@ -96,9 +96,9 @@ require_once( 'functions.php' );
 
 		<a name="required-post-headers"></a>
 		<h3 style="margin-top:2em">Required POST headers</h3>
-		<p>All POST requests to the API must include one of the following headers, depending on how you are passing data to the API:</p>
-		<pre>Content-Type: application/x-www-form-urlencoded</pre>
+		<p>All POST requests to the API must include the following header:</p>
 		<pre>Content-Type: application/json</pre>
+		<p>The POST payload must be JSON-formatted.</p>
 
 		<a name="error-format"></a>
 		<h3 style="margin-top: 2em">Error responses</h3>
@@ -270,12 +270,12 @@ require_once( 'functions.php' );
 				<p>The zip code of the user's mailing address.</p>
 			</div>
 			<div>
-				<p><code>partOfTeam</code> {string}</p>
-				<p>Whether the user is part of a volunteer team. Valid values are <code>yes</code> or <code>no</code>.</p>
+				<p><code>partOfTeam</code> {boolean}</p>
+				<p>Whether the user is part of a volunteer team.</p>
 			</div>
 			<div>
-				<p><code>isCoordinator</code> {string}</p>
-				<p>Whether the user is a team coordinator. Valid values are <code>yes</code> or <code>no</code>.</p>
+				<p><code>isCoordinator</code> {boolean}</p>
+				<p>Whether the user is a team coordinator.</p>
 			</div>
 			<div>
 				<p><code>coordinatorName</code> {string}</p>
@@ -309,8 +309,8 @@ Content-Type: application/json
     "registrationCode": "correct-horse-battery-staple",
     "salesforceId": "JOF7EK0enoejMOE8",
     "volunteerType": "truckStopVolunteer",
-    "partOfTeam": "yes",
-    "isCoordinator": "yes"
+    "partOfTeam": true,
+    "isCoordinator": true
 }</pre>
 
 
@@ -521,7 +521,7 @@ Content-Type: application/json
 				<p>The date of the task.</p>
 			</div>
 			<div>
-				<p><code>numHours</code> {string}</p>
+				<p><code>numHours</code> {number}</p>
 				<p>The number of hours spent volunteering.</p>
 			</div>
 		</section>
@@ -543,7 +543,7 @@ Content-Type: application/json
 	"firebaseIdToken": "abcd1234",
 	"description": "Visited a truck stop to distribute TAT materials.",
     "date": "2018-05-02",
-    "numHours": "5"
+    "numHours": 5.2
 }</pre>
 
 
@@ -578,12 +578,12 @@ Content-Type: application/json
 				<p>Suggestions on how the volunteer experience could be improved.</p>
 			</div>
 			<div>
-				<p><code>givesAnonPermission</code> {string} (required)</p>
-				<p>Whether the user gives TAT permission to quote him anonymously. Valid values are <code>yes</code> or <code>no</code>.</p>
+				<p><code>givesAnonPermission</code> {boolean} (required)</p>
+				<p>Whether the user gives TAT permission to quote him anonymously.</p>
 			</div>
 			<div>
-				<p><code>givesNamePermission</code> {string} (required)</p>
-				<p>Whether the user gives TAT permission to use his name/organization in quotes and on social media. Valid values are <code>yes</code> or <code>no</code>.</p>
+				<p><code>givesNamePermission</code> {boolean} (required)</p>
+				<p>Whether the user gives TAT permission to use his name/organization in quotes and on social media.</p>
 			</div>
 		</section>
 		
@@ -603,8 +603,8 @@ Content-Type: application/json
 {
     "firebaseIdToken": "abcd1234",
     "advice": "Show your passion for volunteering",
-    "givesAnonPermission": "yes",
-    "givesNamePermission": "no"
+    "givesAnonPermission": true,
+    "givesNamePermission": false
 }</pre>
 
 
@@ -627,8 +627,8 @@ Content-Type: application/json
 				</p>
 			</div>
 			<div>
-				<p><code>feelsPrepared</code> {string} (required)</p>
-				<p>Whether the user feels prepared to volunteer after watching the training videos. Valid values are <code>yes</code> or <code>no</code>.</p>
+				<p><code>feelsPrepared</code> {boolean} (required)</p>
+				<p>Whether the user feels prepared to volunteer after watching the training videos.</p>
 			</div>
 			<div>
 				<p><code>questions</code> {string}</p>
@@ -651,7 +651,7 @@ Content-Type: application/json
 // Request body:
 {
     "firebaseIdToken": "abcd1234",
-    "feelsPrepared": "no",
+    "feelsPrepared": false,
     "questions": "How do I properly ask people to donate to TAT?"
 }</pre>
 
@@ -695,16 +695,16 @@ Content-Type: application/json
 				<p>The state of the location to be visited.</p>
 			</div>
 			<div>
-				<p><code>zip</code> {string} (required)</p>
+				<p><code>locationZip</code> {string} (required)</p>
 				<p>The zip code of the location to be visited.</p>
 			</div>
 			<div>
-				<p><code>hasContactedManager</code> {string} (required)</p>
-				<p>Whether the user has contacted the manager of the location. Valid values are <code>yes</code> or <code>no</code>.</p>
+				<p><code>hasContactedManager</code> {boolean} (required)</p>
+				<p>Whether the user has contacted the manager of the location.</p>
 			</div>
 			<div>
-				<p><code>isReadyToReceive</code> {string}</p>
-				<p>Whether the user is ready to receive TAT materials. Valid values are <code>yes</code> or <code>no</code>.</p>
+				<p><code>isReadyToReceive</code> {boolean}</p>
+				<p>Whether the user is ready to receive TAT materials.</p>
 			</div>
 			<div>
 				<p><code>mailingAddress</code> {string}</p>
@@ -744,7 +744,7 @@ Content-Type: application/json
     "locationCity": "Blakefield",
     "locationState": "OK",
     "locationZip": "45454",
-    "hasContactedManager": "no"
+    "hasContactedManager": false
 }</pre>
 
 
@@ -775,8 +775,8 @@ Content-Type: application/json
 				<p>A list of the volunteer's accomplishments during his outreach work at the location and time specified by the pre-outreach survey.</p>
 			</div>
 			<div>
-				<p><code>willFollowUp</code> {string} (required)</p>
-				<p>Whether the user will follow up with management at the location. Valid values are <code>yes</code> or <code>no</code>.</p>
+				<p><code>willFollowUp</code> {boolean} (required)</p>
+				<p>Whether the user will follow up with management at the location.</p>
 			</div>
 			<div>
 				<p><code>followUpDate</code> {string, YYYY-MM-DD}</p>
@@ -801,7 +801,7 @@ Content-Type: application/json
     "firebaseIdToken": "abcd1234",
     "preOutreachSurveyId": "IOJEHW8nEhehoh",
     "accomplishments": "Ate a sandwich, Turned over a new leaf, Fixed seven cars",
-    "willFollowUp": "yes",
+    "willFollowUp": true,
     "followUpDate": "2035-12-22"
 }</pre>
 

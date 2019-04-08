@@ -264,6 +264,37 @@ function getAllSalesforceQueryRecordsAsync( $query ) {
 }
 
 /**
+ * Makes a POST request to the salesforce API and returns a Promise. Does not atomatically refresh the access token.
+ * Resolves with the salesforce response, or rejects with an error object. Use ->getMessage() to get the error message
+ * or ->getResponse() to get the response object.
+ */
+function salesforceAPIPostAsync( $urlSegment, $data = array() ) {
+    global $browser;
+    $deferred = new \React\Promise\Deferred();
+    $sfAuth = getSFAuth();
+    $url = $sfAuth->instance_url . '/services/data/v44.0/' . $urlSegment;
+    
+    // add access token to header and make the request
+    $browser->post(
+        $url,
+        array(
+            'Authorization' => 'Bearer ' . $sfAuth->access_token,
+            'Content-Type' => 'application/json'
+        ),
+        json_encode( $data )
+    )->then(
+        function( $response ) use ($deferred) {
+            $deferred->resolve( getJsonBodyFromResponse($response) );
+        },
+        function( $e ) use ($deferred) {
+            $deferred->reject( $e );
+        }
+    );
+
+    return $deferred->promise();
+}
+
+/**
  * Recursively gets the next set of records in a query.
  */
 function getNextRecordsAsync( $response, &$records ) {
@@ -325,6 +356,37 @@ function refreshSalesforceTokenAsync() {
         }
     );
     return $deferred->promise();
+}
+
+/**
+ * Sends a POST request to salesforce, to create a new object.
+ * $firebaseUid - the firebase UID of the user
+ * $sfUrl - the part of the salesforce API url after /services/data/vXX.X/
+ * $sfData - an array of data which will be JSON-encoded and send as POST data. These should be fields on the to-be-created object.
+ * $contactIDFieldName - whether to include the user's ContactID in the POST data. If defined, this should be the name of the lookup field in the SF object
+ * Returns a promise which resolves with the ID of the newly created object.
+ * 
+ * example:
+ * createNewSFOjbject( 'iojewfoij32', '/sobjects/Contact/', array('Name'=>'Bob') );
+ */
+function createNewSFObject( $firebaseUid, $sfUrl, $sfData, $handleRequestFailure, $contactIDFieldName = false ) {
+    // Get the ID of the Contact entry in salesforce
+    return getSalesforceContactID( $firebaseUid )->then(
+        function( $contactID ) use ($sfUrl, $sfData, $handleRequestFailure, $contactIDFieldName) {
+            // we've now verified that the user has a valid Contact ID in salesforce
+            if ( $contactIDFieldName ) {
+                $sfData[$contactIDFieldName] = $contactID;
+            }
+            // create a new object
+            return makeSalesforceRequestWithTokenExpirationCheck(
+                function() use ($sfUrl, $sfData) {
+                    return salesforceAPIPostAsync( $sfUrl, $sfData );
+                },
+                function($r) { return $r; },
+                $handleRequestFailure
+            );
+        }
+    );
 }
 
 
