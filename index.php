@@ -294,6 +294,10 @@ require_once( 'functions.php' );
 				<p><code>INCORRECT_REGISTRATION_CODE</code></p>
 				<p>The provided registration code was incorrect.</p>
 			</div>
+			<div>
+				<p><code>FIREBASE_USER_ALREADY_IN_SALESFORCE</code></p>
+				<p>There is already a Contact entry in Salesforce associated with the Firebase user.</code></p>
+			</div>
 		</section>
 
 		<h3>Example request</h3>

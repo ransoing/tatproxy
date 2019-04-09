@@ -133,11 +133,9 @@ function getSalesforceContactID( $firebaseUid ) {
         return $deferred->promise();
     }
 
-    $request = function() use ($firebaseUid) {
+    return makeSalesforceRequestWithTokenExpirationCheck( function() use ($firebaseUid) {
         return getAllSalesforceQueryRecordsAsync( "SELECT Id from Contact WHERE TAT_App_Firebase_UID__c = '$firebaseUid'" );
-    };
-
-    return makeSalesforceRequestWithTokenExpirationCheck( $request )->then( function($queryRecords) use ($firebaseUid) {
+    })->then( function($queryRecords) use ($firebaseUid) {
         if ( sizeof($queryRecords) === 0 ) {
             // return some expected error so that the app can know when the user is a new user (has no salesforce entry).
             throw new Exception( json_encode((object)array(
@@ -209,8 +207,8 @@ function cacheContactID( $firebaseUid, $contactID ) {
 
 /**
  * Makes a GET request to the salesforce API and returns a Promise. Does not atomatically refresh the access token.
- * Resolves with the salesforce response, or rejects with an error object. Use ->getMessage() to get the error message
- * or ->getResponse() to get the response object.
+ * Resolves with the salesforce response object, or rejects with an error object.
+ * For errors, Use ->getMessage() to get the error message or ->getResponse() to get the response object.
  */
 function salesforceAPIGetAsync( $urlSegment, $data = array() ) {
     global $browser;
@@ -225,11 +223,12 @@ function salesforceAPIGetAsync( $urlSegment, $data = array() ) {
 }
 
 /**
- * Makes a POST request to the salesforce API and returns a Promise. Does not atomatically refresh the access token.
- * Resolves with the salesforce response, or rejects with an error object. Use ->getMessage() to get the error message
- * or ->getResponse() to get the response object.
+ * Makes a POST, DELETE, PUT, or PATCH request to the salesforce API and returns a Promise. Does not atomatically refresh the access token.
+ * Resolves with the salesforce response object, or rejects with an error object.
+ * For errors, use ->getMessage() to get the error message or ->getResponse() to get the response object.
+ * $method should be 'post', 'delete', 'put', or 'patch'
  */
-function salesforceAPIPostAsync( $urlSegment, $data = array() ) {
+function salesforceAPIAsync( $method, $urlSegment, $data = array() ) {
     global $browser;
     $sfAuth = getSFAuth();
     $url = $sfAuth->instance_url . '/services/data/v44.0/' . $urlSegment;
@@ -237,12 +236,20 @@ function salesforceAPIPostAsync( $urlSegment, $data = array() ) {
         'Authorization' => 'Bearer ' . $sfAuth->access_token,
         'Content-Type' => 'application/json'
     );
-    
+
     // add access token to header and make the request
-    return $browser->post( $url, $headers, json_encode($data) )->then( function($response) {
+    return $browser->$method( $url, $headers, json_encode($data) )->then( function($response) {
         return getJsonBodyFromResponse( $response );
     });
 }
+// convenience functions
+function salesforceAPIPostAsync( $urlSegment, $data = array() ) {
+    return salesforceAPIAsync( 'post', $urlSegment, $data );
+}
+function salesforceAPIPatchAsync( $urlSegment, $data = array() ) {
+    return salesforceAPIAsync( 'patch', $urlSegment, $data );
+}
+
 
 // performs a SOQL query and returns all records. This may take several requests to the API.
 // i.e. getAllSalesforceQueryRecordsAsync( "SELECT Name from Contact WHERE Name LIKE 'S%' OR Name LIKE 'A%' OR Name LIKE 'R%'" )
@@ -308,7 +315,7 @@ function refreshSalesforceTokenAsync() {
 }
 
 /**
- * Sends a POST request to salesforce, to create a new object.
+ * Sends a POST request to salesforce, to create a new object. Verifies that the user has a valid ContactID in salesforce.
  * $firebaseUid - the firebase UID of the user
  * $sfUrl - the part of the salesforce API url after /services/data/vXX.X/
  * $sfData - an array of data which will be JSON-encoded and send as POST data. These should be fields on the to-be-created object.
@@ -334,7 +341,12 @@ function createNewSFObject( $firebaseUid, $sfUrl, $sfData, $contactIDFieldName =
 
 
 function getJsonBodyFromResponse( $response ) {
-	$json = json_decode( (string)$response->getBody() );
-	if ( $json === null ) throw new Exception( 'Malformed json.' );
-	return $json;
+    $body = (string)$response->getBody();
+    if ( $body === '' ) {
+        // In some cases, the response from salesforce has a blank body. Make it an empty object for consistency.
+        $body = '{}';
+    }
+    $json = json_decode( $body );
+    if ( $json === null ) throw new Exception( 'Malformed jsone.' );
+    return $json;
 }
