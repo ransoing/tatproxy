@@ -5,15 +5,6 @@
  * See index.php for usage details.
  */
 
- /*
- @@ cleanup...
-makeSalesforceRequestWithTokenExpirationCheck
-: only takes one parameter, a function which returns a promise.
-
-createNewSFObject
-: no longer takes 4th parameter, onfail handler.
-*/
-
 require_once( '../functions.php' );
 require_once( '../api-support-functions.php' );
 require_once( '../api-core-functions.php' );

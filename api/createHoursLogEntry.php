@@ -19,7 +19,7 @@ $sfData = array(
     'Num_Hours__c' =>    $postData->numHours
 );
 
-createNewSFObject( $firebaseUid, 'sobjects/TAT_App_Hours_Log_Entry__c/', $sfData, $handleRequestFailure, 'Contact__c' )->then(
+createNewSFObject( $firebaseUid, 'sobjects/TAT_App_Hours_Log_Entry__c/', $sfData, 'Contact__c' )->then(
     function( $response ) {
         // new id is $response->id
         echo '{"success": true}';

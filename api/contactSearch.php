@@ -14,21 +14,15 @@ if ( !isset($_GET['email']) || !isset($_GET['phone']) ) {
     errorExit( 400, 'You must define both GET parameters "email" and "phone".' );
 }
 
-
-/**
- * Run this function when all salesforce http requests succeed
- */
-$handleRequestSuccess = function( $response ) {
-    http_response_code( 200 );
-    echo json_encode( (object)array( 'salesforceId' => $response ), JSON_PRETTY_PRINT );
-};
-
-$makeRequest = function() {
+// make the request.
+makeSalesforceRequestWithTokenExpirationCheck( function() {
     global $apiFunctions;
     return $apiFunctions['contactSearch']( $_GET['email'], $_GET['phone'] );
-};
-
-// make the request.
-makeSalesforceRequestWithTokenExpirationCheck( $makeRequest, $handleRequestSuccess, $handleRequestFailure );
+})->then( function($response) {
+    http_response_code( 200 );
+    echo json_encode( (object)array( 'salesforceId' => $response ), JSON_PRETTY_PRINT );
+})->otherwise(
+    $handleRequestFailure
+);
 
 $loop->run();
