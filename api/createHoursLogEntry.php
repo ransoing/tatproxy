@@ -1,7 +1,7 @@
 <?php
 
 /**
- * The high-level code for the createNewUser API call.
+ * The high-level code for the createHoursLogEntry API call.
  * See index.php for usage details.
  */
 
