@@ -3,6 +3,8 @@
 /**
  * The high-level code for the createNewUser API call.
  * See index.php for usage details.
+ * 
+ * Either creates a new Contact object, or fills in details on an existing Contact object.
  */
 
 require_once( '../functions.php' );

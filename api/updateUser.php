@@ -3,6 +3,8 @@
 /**
  * The high-level code for the updateUser API call.
  * See index.php for usage details.
+ * 
+ * Updates the user's Contact object in Salesforce.
  */
 
 require_once( '../functions.php' );

@@ -350,3 +350,21 @@ function getJsonBodyFromResponse( $response ) {
     if ( $json === null ) throw new Exception( 'Malformed jsone.' );
     return $json;
 }
+
+// formats questions and answers for submitting to salesforce as an Event activity
+// (all survey questions and responses are saved to a single text field)
+function formatQA( $question, $answer ) {
+    return "> {$question}\n{$answer}";
+}
+
+// takes an undefined number of arguments. Each argument should be an array: [ question, answer ].
+// Returns one string with a list of formatted questions and answers.
+function formatQAs() {
+    $QAs = func_get_args();
+    $outputArr = array();
+    foreach( $QAs as $QA ) {
+        array_push( $outputArr, formatQA($QA[0], $QA[1]) );
+    }
+    // put a few line breaks between each set of question/answer
+    return implode( "\n\n\n", $outputArr );
+}

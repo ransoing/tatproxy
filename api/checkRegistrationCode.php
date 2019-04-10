@@ -3,6 +3,8 @@
 /**
  * The high-level code for the checkRegistrationCode API call.
  * See index.php for usage details.
+ * 
+ * Responds with whether the provided registration code is valid. The registration code is defined in `config.json`.
  */
 
 require_once( '../functions.php' );

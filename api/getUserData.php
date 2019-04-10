@@ -3,6 +3,8 @@
 /**
  * The high-level code for the getUserData API call.
  * See index.php for usage details.
+ * 
+ * Returns relevant data from the user's Contact object and related objects.
  */
 
 require_once( '../functions.php' );

@@ -3,6 +3,8 @@
 /**
  * The high-level code for the createHoursLogEntry API call.
  * See index.php for usage details.
+ * 
+ * Adds a new object in Salesforce, which is linked to the user's Contact object via a Lookup field.
  */
 
 require_once( '../functions.php' );
