@@ -78,7 +78,7 @@ function getFirebaseStatus() {
 // salesforce connectivity statuses and error messages
 $sfConfigInstructions = 'The salesforce connection vlaues must match the values given for the Connected App titled "TAT Mobile App". '
 	. 'This can be found in the <a href="https://success.salesforce.com/answers?id=9063A000000DbnVQAS" target="_blank">App Manager</a>.';
-$sfAuthInstructions = 'A read-only account is ideal. The account only needs read-access to the TAT app user data.'
+$sfAuthInstructions = 'The account needs to read and write Contacts, Accounts, Events, and all TAT_App custom objects.'
 	. '<br><b>Do NOT authenticate with an admin account.</b>';
 
 $sfStatuses = [
