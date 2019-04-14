@@ -456,18 +456,19 @@ Content-Type: application/json
 			The following properties will be included in the returned object:
 		</p>
 		<pre>{
-    unfinishedOutreachTargets: [
+    unfinishedActivities: [
         {
             id: {string}, // the identifier of the Salesforce object representing the outreach target
             name: {string},
-            type: {string},
+            type: {'cdlSchool' | 'truckingCompany' | 'truckStop' | 'EVENT'},
             address: {string},
             city: {string},
             state: {string},
             zip: {string},
+			date?: {string (ISO-6801 or YYYY-MM-DD)},
             postReports: [
                 {
-                    followUpDate: {string | null}
+                    followUpDate: {string (ISO-8601 or YYYY-MM-DD) | null}
                 }, {
                     ...
                 }

@@ -177,8 +177,38 @@ $apiFunctions['getUserData']['unfinishedOutreachTargets'] = function ( $contactI
             }
 
             return array(
-                'unfinishedOutreachTargets' => $outreachTargets,
-                'unfinishedEvents' => array() // @@ delete this once unfinished events is hashed out
+                // 'unfinishedOutreachTargets' => $outreachTargets,
+                // @@ temporary stub data
+                'unfinishedOutreachTargets' => array(
+                    (object)array(
+                        'id' => 'blabla',
+                        'name' => 'Quikstop',
+                        'type' => 'truckStop',
+                        'address' => '34 Willoughby Lane',
+                        'city' => 'Hillshire',
+                        'state' => 'OK',
+                        'zip' => '49595',
+                        'postReports' => (object)array(
+                            'followUpDate' => '2019-04-13'
+                        )
+                    )
+                ),
+                'unfinishedActivities' => array(
+                    (object)array(
+                        'id' => 'blabla',
+                        'name' => 'Quikstop',
+                        'type' => 'truckStop',
+                        'address' => '34 Willoughby Lane',
+                        'city' => 'Hillshire',
+                        'state' => 'OK',
+                        'zip' => '49595',
+                        'postReports' => (object)array(
+                            'followUpDate' => '2019-04-13'
+                        )
+                    )
+                ),
+                // @@ replace all 'unfinishedOutreachTargets' with 'unfinishedActivities', in filenames and elsewhere
+                'unfinishedEvents' => array() // @@ delete this once unfinished events is hashed out. I should merge 'unfinishedEvents' and 'unfinishedOutreachTargets'
             );
         }
     );
