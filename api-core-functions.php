@@ -82,13 +82,13 @@ $apiFunctions['getUserData'] = array();
 $apiFunctions['getUserData']['basic'] = function( $contactID ) {
     return salesforceAPIGetAsync(
         "sobjects/Contact/${contactID}/",
-        array('fields' => 'TAT_App_Volunteer_Type__c,TAT_App_Has_Watched_Training_Videos__c,FirstName,LastName,TAT_App_Materials_Address__c,TAT_App_Materials_City__c,TAT_App_Materials_State__c,TAT_App_Materials_Zip__c')
+        array('fields' => 'TAT_App_Volunteer_Type__c,TAT_App_Has_Watched_Training_Video__c,FirstName,LastName,TAT_App_Materials_Address__c,TAT_App_Materials_City__c,TAT_App_Materials_State__c,TAT_App_Materials_Zip__c')
     )->then( function($response) use ($contactID) {
         // convert to a format that the app expects
         return array(
             'salesforceId' => $contactID,
             'volunteerType' => $response->TAT_App_Volunteer_Type__c,
-            'hasCompletedTrainingFeedback' => $response->TAT_App_Has_Watched_Training_Videos__c,
+            'hasCompletedTrainingFeedback' => $response->TAT_App_Has_Watched_Training_Video__c,
             'firstName' => $response->FirstName,
             'lastName' => $response->LastName,
             'address' => $response->TAT_App_Materials_Address__c,
@@ -146,17 +146,11 @@ $apiFunctions['getUserData']['unfinishedOutreachTargets'] = function ( $contactI
             foreach( $outreachTargetRecords as $record ) {
                 // find post-reports for this target
                 $targetIsFinished = false;
-                $postReports = array();
                 foreach( $outreachReportRecords as $report ) {
+                    // the volunteer is done with this location if there is an outreach report for this target
                     if ( $report->Outreach_Target__c == $record->Id ) {
-                        // if any reports for this target have a follow-up date of 'null', then the volunteer is done with this location
-                        if ( $report->Follow_Up_Date__c == null ) {
-                            $targetIsFinished = true;
-                            break;
-                        }
-                        array_push( $postReports, (object)array(
-                            'followUpDate' => $report->Follow_Up_Date__c,
-                        ));
+                        $targetIsFinished = true;
+                        break;
                     }
                 }
                 if ( $targetIsFinished ) {
@@ -171,8 +165,8 @@ $apiFunctions['getUserData']['unfinishedOutreachTargets'] = function ( $contactI
                     'address' => $record->TAT_App_Materials_Address__c,
                     'city' => $record->TAT_App_Materials_City__c,
                     'state' => $record->TAT_App_Materials_State__c,
-                    'zip' => $record->TAT_App_Materials_Zip__c,
-                    'postReports' => $postReports
+                    'zip' => $record->TAT_App_Materials_Zip__c//,
+                    // 'date' => find planned date of outreach
                 ));
             }
 
@@ -187,10 +181,7 @@ $apiFunctions['getUserData']['unfinishedOutreachTargets'] = function ( $contactI
                         'address' => '34 Willoughby Lane',
                         'city' => 'Hillshire',
                         'state' => 'OK',
-                        'zip' => '49595',
-                        'postReports' => (object)array(
-                            'followUpDate' => '2019-04-13'
-                        )
+                        'zip' => '49595'
                     )
                 ),
                 'unfinishedActivities' => array(
@@ -201,10 +192,7 @@ $apiFunctions['getUserData']['unfinishedOutreachTargets'] = function ( $contactI
                         'address' => '34 Willoughby Lane',
                         'city' => 'Hillshire',
                         'state' => 'OK',
-                        'zip' => '49595',
-                        'postReports' => (object)array(
-                            'followUpDate' => '2019-04-13'
-                        )
+                        'zip' => '49595'
                     )
                 ),
                 // @@ replace all 'unfinishedOutreachTargets' with 'unfinishedActivities', in filenames and elsewhere

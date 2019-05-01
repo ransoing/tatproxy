@@ -29,7 +29,7 @@ $eventData = array(
 );
 // ... for editing the Contact object
 $contactData = array(
-    'TAT_App_Has_Watched_Training_Videos__c' => true
+    'TAT_App_Has_Watched_Training_Video__c' => true
 );
 
 createNewSFObject( $firebaseUid, 'sobjects/Event/', $eventData, 'WhoId' )->then( function() use ($firebaseUid) {

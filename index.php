@@ -251,7 +251,7 @@ require_once( 'functions.php' );
 			</div>
 			<div>
 				<p><code>volunteerType</code> {string} (required)</p>
-				<p>The type of volunteer. Valid values are <code>truckStopVolunteer</code>, <code>freedomDriversVolunteer</code>, and <code>ambassadorVolunteer</code>.</p>
+				<p>The type of volunteer. Valid values are <code>volunteerDistributor</code> and <code>ambassadorVolunteer</code>.</p>
 			</div>
 			<div>
 				<p><code>mailingAddress</code> {string}</p>
@@ -312,7 +312,7 @@ Content-Type: application/json
     "firebaseIdToken": "abcd1234",
     "registrationCode": "correct-horse-battery-staple",
     "salesforceId": "JOF7EK0enoejMOE8",
-    "volunteerType": "truckStopVolunteer",
+    "volunteerType": "volunteerDistributor",
     "partOfTeam": true,
     "isCoordinator": true
 }</pre>
@@ -338,7 +338,7 @@ Content-Type: application/json
 			</div>
 			<div>
 				<p><code>volunteerType</code> {string} (required)</p>
-				<p>The type of volunteer. Valid values are <code>truckStopVolunteer</code>, <code>freedomDriversVolunteer</code>, and <code>ambassadorVolunteer</code>.</p>
+				<p>The type of volunteer. Valid values are <code>volunteerDistributor</code> and <code>ambassadorVolunteer</code>.</p>
 			</div>
 			<div>
 				<p><code>mailingAddress</code> {string}</p>
@@ -373,7 +373,7 @@ Content-Type: application/json
 // Request body:
 {
     "firebaseIdToken": "abcd1234",
-    "volunteerType": "truckStopVolunteer",
+    "volunteerType": "volunteerDistributor",
     "mailingAddress": "1234 example st."
 }</pre>
 
@@ -450,9 +450,7 @@ Content-Type: application/json
 
 		<p>
 			If <code>unfinishedOutreachTargets</code> is in the list of parts, the API will return a list of outreach targets
-			(locations identified in pre-outreach form submissions) which the user has either not followed up with, or plans to 
-			do additional follow-ups for. Additional planned follow-up dates (identified by post-outreach surveys) are included
-			in the response.<br>
+			(locations identified in pre-outreach form submissions) which the user has not completed a post-report for.<br>
 			The following properties will be included in the returned object:
 		</p>
 		<pre>{
@@ -465,14 +463,7 @@ Content-Type: application/json
             city: {string},
             state: {string},
             zip: {string},
-			date?: {string (ISO-6801 or YYYY-MM-DD)},
-            postReports: [
-                {
-                    followUpDate: {string (ISO-8601 or YYYY-MM-DD) | null}
-                }, {
-                    ...
-                }
-            ]
+			date: {string (ISO-6801 or YYYY-MM-DD)} // planned date of outreach, or date of event
         }, {
             ...
         }
@@ -702,6 +693,10 @@ Content-Type: application/json
 			<div>
 				<p><code>locationZip</code> {string} (required)</p>
 				<p>The zip code of the location to be visited.</p>
+			</div>
+			<div>
+				<p><code>date</code> {string, YYYY-MM-DD} (required)</p>
+				<p>The date when the volunteer is planning on visiting the location.</p>
 			</div>
 			<div>
 				<p><code>hasContactedManager</code> {boolean} (required)</p>
