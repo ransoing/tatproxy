@@ -115,6 +115,7 @@ require_once( 'functions.php' );
 		<ul class="api-links">
 			<li><a href="#checkRegistrationCode">checkRegistrationCode</a></li>
 			<li><a href="#contactSearch">contactSearch</a></li>
+			<li><a href="#getTeamCoordinators">getTeamCoordinators</a></li>
 			<li><a href="#createNewUser">createNewUser</a></li>
 			<li><a href="#updateUser">updateUser</a></li>
 			<li><a href="#getUserData">getUserData</a></li>
@@ -206,6 +207,32 @@ require_once( 'functions.php' );
 
 
 		<!-- ==================================== -->
+		<a name="getTeamCoordinators"></a>
+		<h2>getTeamCoordinators</h2>
+		<p>
+			<b>getTeamCoordinators</b> returns the Salesforce Contact IDs and names for all users who are listed as volunteer team coordinators.
+		</p>
+
+		<h3>Make a GET request to:</h3>
+		<pre>/api/getTeamCoordinators</pre>
+
+		<h3>Response payload</h3>
+		<pre>[
+    {
+        name: {string},
+        salesforceId: {string}
+    }, {
+        name: {string},
+        salesforceId: {string}
+    },
+    ...
+]</pre>
+
+		<h3>Example request</h3>
+		<pre>GET /api/getTeamCoordinators</pre>
+
+
+		<!-- ==================================== -->
 		<a name="createNewUser"></a>
 		<h2>createNewUser</h2>
 		<p><b>createNewUser</b> creates a new app user by associating a firebase uid with a Contact entry in Salesforce, creating a new Contact if needed.</p>
@@ -278,8 +305,8 @@ require_once( 'functions.php' );
 				<p>Whether the user is a team coordinator.</p>
 			</div>
 			<div>
-				<p><code>coordinatorName</code> {string}</p>
-				<p>The name of the user's volunteer team coordinator.</p>
+				<p><code>coordinatorID</code> {string}</p>
+				<p>The Salesforce Contact ID of the user's volunteer team coordinator (if the user is not the team coordinator).</p>
 			</div>
 		</section>
 		
@@ -395,7 +422,7 @@ Content-Type: application/json
 				<p><code>parts</code> {string} (required)</p>
 				<p>
 					A comma-separated list of values. These values define what data will be returned.<br>
-					Acceptable values are: <code>basic</code>, <code>hoursLogs</code>, <code>unfinishedOutreachTargets</code>.
+					Acceptable values are: <code>basic</code>, <code>hoursLogs</code>, <code>unfinishedActivities</code>.
 				</p>
 			</div>
 		</section>
@@ -449,21 +476,22 @@ Content-Type: application/json
 }</pre>
 
 		<p>
-			If <code>unfinishedOutreachTargets</code> is in the list of parts, the API will return a list of outreach targets
-			(locations identified in pre-outreach form submissions) which the user has not completed a post-report for.<br>
+			If <code>unfinishedActivities</code> is in the list of parts, the API will return a list of outreach
+			activities (locations identified in pre-outreach form submissions) or events which the user has not
+			completed a post-report for.<br>
 			The following properties will be included in the returned object:
 		</p>
 		<pre>{
     unfinishedActivities: [
         {
-            id: {string}, // the identifier of the Salesforce object representing the outreach target
+            id: {string}, // the identifier of the Salesforce object representing the outreach activity or event activity
             name: {string},
-            type: {'cdlSchool' | 'truckingCompany' | 'truckStop' | 'EVENT'},
+            type: {'cdlSchool' | 'truckingCompany' | 'truckStop' | 'event'},
             address: {string},
             city: {string},
             state: {string},
             zip: {string},
-			date: {string (ISO-6801 or YYYY-MM-DD)} // planned date of outreach, or date of event
+            date: {string (ISO-8601 or YYYY-MM-DD)} // planned date of outreach, or date of event
         }, {
             ...
         }
@@ -480,7 +508,7 @@ Content-Type: application/json
 
 		<h3>Example request</h3>
 		<pre>// URL:
-POST /api/getUserData?parts=basic,hoursLogs,unfinishedOutreachTargets
+POST /api/getUserData?parts=basic,hoursLogs,unfinishedActivities
 
 // Headers:
 Content-Type: application/json
@@ -655,7 +683,7 @@ Content-Type: application/json
 		<!-- ==================================== -->
 		<a name="createPreOutreachSurvey"></a>
 		<h2>createPreOutreachSurvey</h2>
-		<p><b>createPreOutreachSurvey</b> adds the data from a pre-outreach survey to Salesforce. If needed, a new Account object is created in Salesforce.</p>
+		<p><b>createPreOutreachSurvey</b> adds the data from a pre-outreach survey to Salesforce. Creates a Volunteer Activity object for each volunteer on the user's team.</p>
 
 		<h3>Make a POST request to:</h3>
 		<pre>/api/createPreOutreachSurvey</pre>

@@ -9,7 +9,6 @@
 
 require_once( '../functions.php' );
 require_once( '../api-support-functions.php' );
-require_once( '../api-core-functions.php' );
 
 // verify the firebase login and get the user's firebase uid.
 $firebaseUid = verifyFirebaseLogin();
@@ -34,7 +33,7 @@ $sfData = array(
     'TAT_App_Materials_Zip__c' =>   $postData->mailingZip,
     'TAT_App_Is_On_Volunteer_Team__c' =>  $postData->partOfTeam,
     'TAT_App_Is_Team_Coordinator__c' =>   $postData->isCoordinator,
-    'TAT_App_Team_Coordinator_Name__c' => $postData->coordinatorName
+    'TAT_App_Team_Coordinator__c' => $postData->coordinatorID
 );
 
 if ( empty($postData->salesforceId) ) {

@@ -9,7 +9,6 @@
 
 require_once( '../functions.php' );
 require_once( '../api-support-functions.php' );
-require_once( '../api-core-functions.php' );
 
 // verify the firebase login and get the user's firebase uid.
 $firebaseUid = verifyFirebaseLogin();

@@ -9,7 +9,6 @@
 
 require_once( '../functions.php' );
 require_once( '../api-support-functions.php' );
-require_once( '../api-core-functions.php' );
 
 // process the GET parameters
 if ( !isset($_GET['code']) ) {

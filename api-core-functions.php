@@ -80,9 +80,22 @@ $apiFunctions['getUserData'] = array();
  * URL: /api/getUserData?parts=basic
  */
 $apiFunctions['getUserData']['basic'] = function( $contactID ) {
+    $queryFields = array(
+        'TAT_App_Volunteer_Type__c',
+        'TAT_App_Has_Watched_Training_Video__c',
+        'FirstName',
+        'LastName',
+        'TAT_App_Materials_Address__c',
+        'TAT_App_Materials_City__c',
+        'TAT_App_Materials_State__c',
+        'TAT_App_Materials_Zip__c',
+        'TAT_App_Is_On_Volunteer_Team__c',
+        'TAT_App_Is_Team_Coordinator__c',
+        'TAT_App_Team_Coordinator__c'
+    );
     return salesforceAPIGetAsync(
         "sobjects/Contact/${contactID}/",
-        array('fields' => 'TAT_App_Volunteer_Type__c,TAT_App_Has_Watched_Training_Video__c,FirstName,LastName,TAT_App_Materials_Address__c,TAT_App_Materials_City__c,TAT_App_Materials_State__c,TAT_App_Materials_Zip__c')
+        array( 'fields' => implode(',', $queryFields) )
     )->then( function($response) use ($contactID) {
         // convert to a format that the app expects
         return array(
@@ -94,7 +107,10 @@ $apiFunctions['getUserData']['basic'] = function( $contactID ) {
             'address' => $response->TAT_App_Materials_Address__c,
             'city' => $response->TAT_App_Materials_City__c,
             'state' => $response->TAT_App_Materials_State__c,
-            'zip' => $response->TAT_App_Materials_Zip__c
+            'zip' => $response->TAT_App_Materials_Zip__c,
+            'isOnVolunteerTeam' => $response->TAT_App_Is_On_Volunteer_Team__c,
+            'isTeamCoordinator' => $response->TAT_App_Is_Team_Coordinator__c,
+            'teamCoordinatorID' => $response->TAT_App_Team_Coordinator__c
         );
     });
 };
@@ -124,82 +140,40 @@ $apiFunctions['getUserData']['hoursLogs'] = function ( $contactID ) {
 };
 
 /**
- * Retrieves info on all pre-outreach and post-outreach forms that the user has submitted,
- * and figures out which pre-outreach locations do not have an associated post-outreach form, and
- * returns the data on those.
- * URL: /api/getUserData?parts=unfinishedOutreachTargets
+ * Retrieves info on all pre-outreach and pre-event surveys that the user has submitted.
+ * URL: /api/getUserData?parts=unfinishedActivities
  */
-$apiFunctions['getUserData']['unfinishedOutreachTargets'] = function ( $contactID ) {
-    $promises = array(
-        // get all outreach targets
-        getAllSalesforceQueryRecordsAsync( "SELECT Id, Location_Name__c, Location_Type__c, Materials_Mailing_Address__c, Materials_Mailing_City__c, Materials_Mailing_State__c, Materials_Mailing_Zip__c FROM TAT_App_Outreach_Target__c WHERE Contact__c = '$contactID'" ),
-        // get all outreach reports
-        getAllSalesforceQueryRecordsAsync( "SELECT Follow_Up_Date__c, Accomplishments__c, Outreach_Target__c FROM TAT_App_Outreach_Report__c WHERE Outreach_Target__r.Contact__c = '$contactID'" )
+$apiFunctions['getUserData']['unfinishedActivities'] = function ( $contactID ) {
+    $queryFields = array(
+        'Id',
+        'Name__c',
+        'Type__c',
+        'Address__c',
+        'City__c',
+        'State__c',
+        'Zip__c',
+        'Date__c',
+        'Completed__c'
     );
-    return \React\Promise\all( $promises )->then(
-        function( $responses ) {
-            $outreachTargetRecords = $responses[0];
-            $outreachReportRecords = $responses[1];
-
-            // convert outreach targets/records to a better format
-            $outreachTargets = array();
-            foreach( $outreachTargetRecords as $record ) {
-                // find post-reports for this target
-                $targetIsFinished = false;
-                foreach( $outreachReportRecords as $report ) {
-                    // the volunteer is done with this location if there is an outreach report for this target
-                    if ( $report->Outreach_Target__c == $record->Id ) {
-                        $targetIsFinished = true;
-                        break;
-                    }
-                }
-                if ( $targetIsFinished ) {
-                    // don't include this outreach target in the list passed to the app.
-                    // we only want to show outreach targets that require a post-outreach report.
-                    continue;
-                }
-                array_push( $outreachTargets, (object)array(
+    // get all unfinished Volunteer Activity objects
+    getAllSalesforceQueryRecordsAsync( "SELECT " . implode(',', $queryFields) . " FROM TAT_App_Volunteer_Activity__c WHERE Contact__c = '$contactID' AND Completed__c = false" )->then(
+        function( $records ) {
+            // convert activities to a better format
+            $unfinishedActivities = array();
+            foreach( $records as $record ) {
+                array_push( $unfinishedActivities, (object)array(
                     'id' => $record->Id,
-                    'name' => $record->Location_Name__c,
-                    'type' => $record->Location_Type__c,
-                    'address' => $record->TAT_App_Materials_Address__c,
-                    'city' => $record->TAT_App_Materials_City__c,
-                    'state' => $record->TAT_App_Materials_State__c,
-                    'zip' => $record->TAT_App_Materials_Zip__c//,
-                    // 'date' => find planned date of outreach
+                    'name' => $record->Name__c,
+                    'type' => $record->Type__c,
+                    'address' => $record->Address__c,
+                    'city' => $record->City__c,
+                    'state' => $record->State__c,
+                    'zip' => $record->Zip__c,
+                    'date' => $record->Date__c
                 ));
             }
 
-            return array(
-                // 'unfinishedOutreachTargets' => $outreachTargets,
-                // @@ temporary stub data
-                'unfinishedOutreachTargets' => array(
-                    (object)array(
-                        'id' => 'blabla',
-                        'name' => 'Quikstop',
-                        'type' => 'truckStop',
-                        'address' => '34 Willoughby Lane',
-                        'city' => 'Hillshire',
-                        'state' => 'OK',
-                        'zip' => '49595'
-                    )
-                ),
-                'unfinishedActivities' => array(
-                    (object)array(
-                        'id' => 'blabla',
-                        'name' => 'Quikstop',
-                        'type' => 'truckStop',
-                        'address' => '34 Willoughby Lane',
-                        'city' => 'Hillshire',
-                        'state' => 'OK',
-                        'zip' => '49595'
-                    )
-                ),
-                // @@ replace all 'unfinishedOutreachTargets' with 'unfinishedActivities', in filenames and elsewhere
-                'unfinishedEvents' => array() // @@ delete this once unfinished events is hashed out. I should merge 'unfinishedEvents' and 'unfinishedOutreachTargets'
-            );
+            return array( 'unfinishedActivities' => $unfinishedActivities );
         }
     );
 };
-
-// @@ add unfinished events. The app will need to query for UnfinishedEvents as well.
