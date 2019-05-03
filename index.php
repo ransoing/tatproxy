@@ -803,8 +803,8 @@ Content-Type: application/json
 				</p>
 			</div>
 			<div>
-				<p><code>preOutreachSurveyId</code> {string} (required)</p>
-				<p>The ID of a pre-outreach survey object in Salesforce.</p>
+				<p><code>activityId</code> {string} (required)</p>
+				<p>The ID of a Volunteer Activity object in Salesforce.</p>
 			</div>
 			<div>
 				<p><code>accomplishments</code> {string} (required)</p>
@@ -825,6 +825,14 @@ Content-Type: application/json
     success: true
 }</pre>
 
+		<h3>Error codes <a class="help" href="#error-format">?</a></h3>
+		<section>
+			<div>
+				<p><code>INVALID_ACTIVITY_ID</code></p>
+				<p>There is no activity with that ID that belongs to the specified user.</p>
+			</div>
+		</section>
+
 		<h3>Example request</h3>
 		<pre>// URL:
 POST /api/createPostOutreachReport
@@ -835,7 +843,7 @@ Content-Type: application/json
 // Request body:
 {
     "firebaseIdToken": "abcd1234",
-    "preOutreachSurveyId": "IOJEHW8nEhehoh"
+    "activityId": "IOJEHW8nEhehoh"
 }</pre>
 
 		<!-- ==================================== -->

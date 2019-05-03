@@ -360,6 +360,10 @@ function formatQA( $question, $answer ) {
     return "> {$question}\n{$answer}";
 }
 
+function QASeparator() {
+    return "\n\n\n";
+}
+
 // takes an undefined number of arguments. Each argument should be an array: [ question, answer ].
 // Returns one string with a list of formatted questions and answers.
 function formatQAs() {
@@ -369,5 +373,14 @@ function formatQAs() {
         array_push( $outputArr, formatQA($QA[0], $QA[1]) );
     }
     // put a few line breaks between each set of question/answer
-    return implode( "\n\n\n", $outputArr );
+    return implode( QASeparator(), $outputArr );
+}
+
+function getLocationType( $key ) {
+    $locationTypes = array(
+        'cdlSchool' => 'CDL School',
+        'truckingCompany' => 'Trucking Company',
+        'truckStop' => 'Truck Stop'
+    );
+    return $locationTypes[ $key ];
 }

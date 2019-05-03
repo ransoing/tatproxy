@@ -14,21 +14,15 @@ require_once( '../api-support-functions.php' );
 $firebaseUid = verifyFirebaseLogin();
 $postData = getPOSTData();
 
-getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postData) {
-    // get a list of volunteer activities for this user.
-    return makeSalesforceRequestWithTokenExpirationCheck( function() use ($contactID) {
-        return getAllSalesforceQueryRecordsAsync( "SELECT Id FROM TAT_App_Volunteer_Activity__c WHERE Contact__c = '$contactID'" );
-    })->then( function( $activities ) use($postData) {
-        // verify that there is an activity for this user with the given ID
-        $foundActivity = false;
-        foreach( $activities as $activity ) {
-            if ( $activity->Id === $postData->activityId ) {
-                $foundActivity = true;
-                break;
-            }
-        }
+// sanitize activityId by removing quotes
+$activityId = str_replace( array("'", '"'), "", $postData->activityId );
 
-        if ( !$foundActivity ) {
+getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postData, $activityId) {
+    // get a list of volunteer activities for this user.
+    return makeSalesforceRequestWithTokenExpirationCheck( function() use ($contactID, $activityId) {
+        return getAllSalesforceQueryRecordsAsync( "SELECT Id FROM TAT_App_Volunteer_Activity__c WHERE Contact__c = '$contactID' AND Id = '$activityId'" );
+    })->then( function( $activities ) use($activityId) {
+        if ( sizeof($activities) == 0 ) {
             $message = json_encode((object)array(
                 'errorCode' => 'INVALID_ACTIVITY_ID',
                 'message' => 'There is no activity with that ID that belongs to the specified user.'
@@ -37,7 +31,7 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
         }
 
         // delete the thing!
-        return salesforceAPIDeleteAsync( 'sobjects/TAT_App_Volunteer_Activity__c/' . $postData->activityId );
+        return salesforceAPIDeleteAsync( 'sobjects/TAT_App_Volunteer_Activity__c/' . $activityId );
     });
 })->then( function() {
     echo '{"success": true}';

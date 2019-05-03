@@ -25,18 +25,13 @@ $sfData = array(
     'Date__c' =>    $postData->date
 );
 
-$locationTypes = array(
-    'cdlSchool' => 'CDL School',
-    'truckingCompany' => 'Trucking Company',
-    'truckStop' => 'Truck Stop'
-);
-
+$locationType = getLocationType( $postData->locationType );
 $now = date('c');
 $eventData = array(
     'Subject' =>  'TAT App Pre-Outreach Survey response',
     'Description' => formatQAs(
         array( 'What location do you plan on visiting?', implode("\n", array(
-            "{$postData->locationName} ({$locationTypes[$postData->locationType]})",
+            "{$postData->locationName} ({$locationType})",
             $postData->locationAddress,
             "{$postData->locationCity}, {$postData->locationState} {$postData->locationZip}"
         ))),
