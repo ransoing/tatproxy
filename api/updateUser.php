@@ -20,7 +20,8 @@ $sfData = array(
     'TAT_App_Materials_Address__c' => $postData->mailingAddress,
     'TAT_App_Materials_City__c' =>  $postData->mailingCity,
     'TAT_App_Materials_State__c' => $postData->mailingState,
-    'TAT_App_Materials_Zip__c' =>   $postData->mailingZip
+    'TAT_App_Materials_Zip__c' =>   $postData->mailingZip,
+    'TAT_App_Team_Coordinator__c' => $postData->coordinatorID
 );
 
 // Verify that the user has a Contact object

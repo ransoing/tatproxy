@@ -383,6 +383,10 @@ Content-Type: application/json
 				<p><code>mailingZip</code> {string}</p>
 				<p>The zip code of the user's mailing address.</p>
 			</div>
+			<div>
+				<p><code>coordinatorID</code> {string}</p>
+				<p>The Contact ID of the user's team coordinator.</p>
+			</div>
 		</section>
 		
 		<h3>Response payload</h3>
@@ -392,7 +396,7 @@ Content-Type: application/json
 		
 		<h3>Example request</h3>
 		<pre>// URL:
-POST /api/createNewUser
+POST /api/updateUser
 
 // Headers:
 Content-Type: application/json

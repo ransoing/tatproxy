@@ -156,7 +156,7 @@ $apiFunctions['getUserData']['unfinishedActivities'] = function ( $contactID ) {
         'Completed__c'
     );
     // get all unfinished Volunteer Activity objects
-    getAllSalesforceQueryRecordsAsync( "SELECT " . implode(',', $queryFields) . " FROM TAT_App_Volunteer_Activity__c WHERE Contact__c = '$contactID' AND Completed__c = false" )->then(
+    return getAllSalesforceQueryRecordsAsync( "SELECT " . implode(',', $queryFields) . " FROM TAT_App_Volunteer_Activity__c WHERE Contact__c = '$contactID' AND Completed__c = false" )->then(
         function( $records ) {
             // convert activities to a better format
             $unfinishedActivities = array();
