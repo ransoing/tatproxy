@@ -124,6 +124,7 @@ require_once( 'functions.php' );
 			<li><a href="#createTrainingVideoFeedback">createTrainingVideoFeedback</a></li>
 			<li><a href="#createPreOutreachSurvey">createPreOutreachSurvey</a></li>
 			<li><a href="#createPostOutreachReport">createPostOutreachReport</a></li>
+			<li><a href="#deleteVolunteerActivity">deleteVolunteerActivity</a></li>
 		</ul>
 
 		<!-- ==================================== -->
@@ -305,7 +306,7 @@ require_once( 'functions.php' );
 				<p>Whether the user is a team coordinator.</p>
 			</div>
 			<div>
-				<p><code>coordinatorID</code> {string}</p>
+				<p><code>coordinatorId</code> {string}</p>
 				<p>The Salesforce Contact ID of the user's volunteer team coordinator (if the user is not the team coordinator).</p>
 			</div>
 		</section>
@@ -384,7 +385,7 @@ Content-Type: application/json
 				<p>The zip code of the user's mailing address.</p>
 			</div>
 			<div>
-				<p><code>coordinatorID</code> {string}</p>
+				<p><code>coordinatorId</code> {string}</p>
 				<p>The Contact ID of the user's team coordinator.</p>
 			</div>
 		</section>
@@ -459,7 +460,10 @@ Content-Type: application/json
     address: {string},
     city: {string},
     state: {string},
-    zip: {string}
+    zip: {string},
+    isOnVolunteerTeam: {boolean},
+    isTeamCoordinator: {boolean},
+    teamCoordinatorId: {string} // ContactID of the salesforce object representing the user's team coordinator
 }</pre>
 
 		<p>
@@ -831,10 +835,57 @@ Content-Type: application/json
 // Request body:
 {
     "firebaseIdToken": "abcd1234",
-    "preOutreachSurveyId": "IOJEHW8nEhehoh",
-    "accomplishments": "Ate a sandwich, Turned over a new leaf, Fixed seven cars",
-    "willFollowUp": true,
-    "followUpDate": "2035-12-22"
+    "preOutreachSurveyId": "IOJEHW8nEhehoh"
+}</pre>
+
+		<!-- ==================================== -->
+		<a name="deleteVolunteerActivity"></a>
+		<h2>deleteVolunteerActivity</h2>
+		<p><b>deleteVolunteerActivity</b> removes an user's Volunteer Activity. This is typically used to cancel unfinished activities.</p>
+
+		<h3>Make a POST request to:</h3>
+		<pre>/api/deleteVolunteerActivity</pre>
+
+		<h3>POST request body payload parameters</h3>
+		<section>
+			<div>
+				<p><code>firebaseIdToken</code> {string} (required)</p>
+				<p>
+					<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
+					from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
+					login state, and access various Firebase resources.
+				</p>
+			</div>
+			<div>
+				<p><code>activityId</code> {string} (required)</p>
+				<p>The ID of a Volunteer Activity object in Salesforce. It must be an activity which is related to the user identified by the <code>firebaseIdToken</code>.</p>
+			</div>
+		</section>
+		
+		<h3>Response payload</h3>
+		<pre>{
+    success: true
+}</pre>
+
+		<h3>Error codes <a class="help" href="#error-format">?</a></h3>
+		<section>
+			<div>
+				<p><code>INVALID_ACTIVITY_ID</code></p>
+				<p>There is no activity with that ID that belongs to the specified user.</p>
+			</div>
+		</section>
+
+		<h3>Example request</h3>
+		<pre>// URL:
+POST /api/deleteVolunteerActivity
+
+// Headers:
+Content-Type: application/json
+
+// Request body:
+{
+    "firebaseIdToken": "abcd1234",
+    "activityId": "IOJEHW8nEhehoh"
 }</pre>
 
 

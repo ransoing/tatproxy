@@ -33,7 +33,7 @@ $sfData = array(
     'TAT_App_Materials_Zip__c' =>   $postData->mailingZip,
     'TAT_App_Is_On_Volunteer_Team__c' =>  $postData->partOfTeam,
     'TAT_App_Is_Team_Coordinator__c' =>   $postData->isCoordinator,
-    'TAT_App_Team_Coordinator__c' => $postData->coordinatorID
+    'TAT_App_Team_Coordinator__c' => $postData->coordinatorId
 );
 
 if ( empty($postData->salesforceId) ) {

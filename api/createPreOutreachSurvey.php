@@ -18,14 +18,41 @@ $postData = getPOSTData();
 $sfData = array(
     'Name__c' =>    $postData->locationName,
     'Type__c' =>    $postData->locationType,
-    'Address_c' =>  $postData->locationAddress,
+    'Address__c' =>  $postData->locationAddress,
     'City__c' =>    $postData->locationCity,
     'State__c' =>   $postData->locationState,
     'Zip__c' =>     $postData->locationZip,
     'Date__c' =>    $postData->date
 );
 
-getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($sfData) {
+$locationTypes = array(
+    'cdlSchool' => 'CDL School',
+    'truckingCompany' => 'Trucking Company',
+    'truckStop' => 'Truck Stop'
+);
+
+$now = date('c');
+$eventData = array(
+    'Subject' =>  'TAT App Pre-Outreach Survey response',
+    'Description' => formatQAs(
+        array( 'What location do you plan on visiting?', implode("\n", array(
+            "{$postData->locationName} ({$locationTypes[$postData->locationType]})",
+            $postData->locationAddress,
+            "{$postData->locationCity}, {$postData->locationState} {$postData->locationZip}"
+        ))),
+        array( 'When do you plan on visiting this location?', $postData->date ),
+        array( 'Have you contacted the general manager (or other contact) to make an appointment?', $postData->hasContactedManager ? 'Yes' : 'No' ),
+        array( 'Are you ready to receive TAT materials?', $postData->isReadyToReceive ? 'Yes' : 'No' ),
+        array( 'What is a good mailing address to send the materials to?', implode("\n", array(
+            $postData->mailingAddress,
+            "{$postData->mailingCity}, {$postData->mailingState} {$postData->mailingZip}"
+        )))
+    ),
+    'StartDateTime' =>  $now,
+    'EndDateTime' =>    $now
+);
+
+getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($sfData, $eventData) {
     // get a list of the volunteers who are on this user's team.
     return makeSalesforceRequestWithTokenExpirationCheck( function() use ($contactID) {
         return getAllSalesforceQueryRecordsAsync( "SELECT Id FROM Contact WHERE TAT_App_Team_Coordinator__c = '$contactID'" );
@@ -42,13 +69,16 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($sfData)
             // call the API function and store the promise
             $dataCopy = $sfData;
             $dataCopy['Contact__c'] = $memberId;
-            salesforceAPIPostAsync( 'sobjects/TAT_App_Volunteer_Activity__c/', $dataCopy );
-            array_push( $promises, createNewSFObject($firebaseUid, 'sobjects/TAT_App_Volunteer_Activity__c/', $dataCopy) );
+            array_push( $promises, salesforceAPIPostAsync( 'sobjects/TAT_App_Volunteer_Activity__c/', $dataCopy ) );
         }
         return \React\Promise\all( $promises );
+    })->then( function() use ($eventData, $contactID) {
+        // For the current user, create an Event activity on his Contact detailing the info given in the survey.
+        $eventData['WhoId'] = $contactID;
+        return salesforceAPIPostAsync( 'sobjects/Event/', $eventData );
     });
 })->then( function() {
-    // @@ For the current user, create an Event activity on his Contact detailing the info given in the survey.
+    echo '{"success": true}';
 })->otherwise(
     $handleRequestFailure
 );

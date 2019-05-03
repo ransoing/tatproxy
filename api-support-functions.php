@@ -249,6 +249,9 @@ function salesforceAPIPostAsync( $urlSegment, $data = array() ) {
 function salesforceAPIPatchAsync( $urlSegment, $data = array() ) {
     return salesforceAPIAsync( 'patch', $urlSegment, $data );
 }
+function salesforceAPIDeleteAsync( $urlSegment, $data = array() ) {
+    return salesforceAPIAsync( 'delete', $urlSegment, $data );
+}
 
 
 // performs a SOQL query and returns all records. This may take several requests to the API.

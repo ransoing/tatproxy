@@ -110,7 +110,7 @@ $apiFunctions['getUserData']['basic'] = function( $contactID ) {
             'zip' => $response->TAT_App_Materials_Zip__c,
             'isOnVolunteerTeam' => $response->TAT_App_Is_On_Volunteer_Team__c,
             'isTeamCoordinator' => $response->TAT_App_Is_Team_Coordinator__c,
-            'teamCoordinatorID' => $response->TAT_App_Team_Coordinator__c
+            'teamCoordinatorId' => $response->TAT_App_Team_Coordinator__c
         );
     });
 };
