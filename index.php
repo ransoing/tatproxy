@@ -119,7 +119,6 @@ require_once( 'functions.php' );
 			<li><a href="#createNewUser">createNewUser</a></li>
 			<li><a href="#updateUser">updateUser</a></li>
 			<li><a href="#getUserData">getUserData</a></li>
-			<li><a href="#createHoursLogEntry">createHoursLogEntry</a></li>
 			<li><a href="#createTestimonial">createTestimonial</a></li>
 			<li><a href="#createTrainingVideoFeedback">createTrainingVideoFeedback</a></li>
 			<li><a href="#createPreOutreachSurvey">createPreOutreachSurvey</a></li>
@@ -427,7 +426,7 @@ Content-Type: application/json
 				<p><code>parts</code> {string} (required)</p>
 				<p>
 					A comma-separated list of values. These values define what data will be returned.<br>
-					Acceptable values are: <code>basic</code>, <code>hoursLogs</code>, <code>unfinishedActivities</code>.
+					Acceptable values are: <code>basic</code>, <code>unfinishedActivities</code>.
 				</p>
 			</div>
 		</section>
@@ -467,30 +466,13 @@ Content-Type: application/json
 }</pre>
 
 		<p>
-			If <code>hoursLogs</code> is in the list of parts, the API will return an array of hours log entries that the
-			user has previously submitted.<br>
-			The following properties will be included in the returned object:
-		</p>
-		<pre>{
-    hoursLogs: [
-        {
-            taskDescription: {string},
-            date: {string},
-            numHours: {number}
-        }, {
-            ...
-        }
-    ]
-}</pre>
-
-		<p>
 			If <code>unfinishedActivities</code> is in the list of parts, the API will return a list of outreach
 			activities (locations identified in pre-outreach form submissions) or events which the user has not
 			completed a post-report for.<br>
-			The following properties will be included in the returned object:
+			The following properties will be included in the returned object, if the user is a Volunteer Distributor:
 		</p>
 		<pre>{
-    unfinishedActivities: [
+    outreachLocations: [
         {
             id: {string}, // the identifier of the Salesforce object representing the outreach activity or event activity
             name: {string},
@@ -499,7 +481,13 @@ Content-Type: application/json
             city: {string},
             state: {string},
             zip: {string},
-            date: {string (ISO-8601 or YYYY-MM-DD)} // planned date of outreach, or date of event
+            date: {string (ISO-8601 or YYYY-MM-DD)}, // planned date of outreach, or date of event
+            contact: { // the person to be contacted at the defined location
+                name: {string},
+                title: {string},
+                email: {string},
+                phone: {string}
+            }
         }, {
             ...
         }
@@ -516,7 +504,7 @@ Content-Type: application/json
 
 		<h3>Example request</h3>
 		<pre>// URL:
-POST /api/getUserData?parts=basic,hoursLogs,unfinishedActivities
+POST /api/getUserData?parts=basic,unfinishedActivities
 
 // Headers:
 Content-Type: application/json
@@ -524,59 +512,6 @@ Content-Type: application/json
 // Request body:
 { "firebaseIdToken": "abcd1234" }</pre>
 
-
-
-		<!-- ==================================== -->
-		<a name="createHoursLogEntry"></a>
-		<h2>createHoursLogEntry</h2>
-		<p><b>createHoursLogEntry</b> adds a log entry associated with a user, about the volunteer tasks that the user has performed.</p>
-
-		<h3>Make a POST request to:</h3>
-		<pre>/api/createHoursLogEntry</pre>
-
-		<h3>POST request body payload parameters</h3>
-		<section>
-			<div>
-				<p><code>firebaseIdToken</code> {string} (required)</p>
-				<p>
-					<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
-					from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
-					login state, and access various Firebase resources.
-				</p>
-			</div>
-			<div>
-				<p><code>description</code> {string} (required)</p>
-				<p>A description of the task performed.</p>
-			</div>
-			<div>
-				<p><code>date</code> {string, YYYY-MM-DD} (required)</p>
-				<p>The date of the task.</p>
-			</div>
-			<div>
-				<p><code>numHours</code> {number}</p>
-				<p>The number of hours spent volunteering.</p>
-			</div>
-		</section>
-		
-		<h3>Response payload</h3>
-		<pre>{
-    success: true
-}</pre>
-
-		<h3>Example request</h3>
-		<pre>// URL:
-POST /api/createHoursLogEntry
-
-// Headers:
-Content-Type: application/json
-
-// Request body:
-{
-	"firebaseIdToken": "abcd1234",
-	"description": "Visited a truck stop to distribute TAT materials.",
-    "date": "2018-05-02",
-    "numHours": 5.2
-}</pre>
 
 
 		<!-- ==================================== -->

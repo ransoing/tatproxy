@@ -7,7 +7,7 @@
 // As mentioned elsewhere, for the getUserData API functions, multiple of these functions can be invoked simultaneously
 // through the API by calling /api/getUserData/parts=[function1],[function2],[...]
 // For example:
-// /api/getUserData?parts=basic,hoursLogs
+// /api/getUserData?parts=basic,unfinishedActivities
 
 // This array maps API calls and getUserData 'parts' parameters to functions
 $apiFunctions = array();
@@ -115,65 +115,69 @@ $apiFunctions['getUserData']['basic'] = function( $contactID ) {
     });
 };
 
-/**
- * Gets a listing of hours log entries that the user has submitted.
- * URL: /api/getUserData?parts=hoursLogs
- */
-$apiFunctions['getUserData']['hoursLogs'] = function ( $contactID ) {
-    return getAllSalesforceQueryRecordsAsync(
-        "SELECT Description__c, Date__c, Num_Hours__c from TAT_App_Hours_Log_Entry__c WHERE Contact__c = '$contactID'"
-    )->then( function($records) {
-        // convert to a format that the app expects
-        $hoursLogs = array();
-        foreach( $records as $record ) {
-            array_push( $hoursLogs, (object)array(
-                'taskDescription' => $record->Description__c,
-                'date' => $record->Date__c,
-                'numHours' => $record->Num_Hours__c
-            ));
-        }
-
-        return array(
-            'hoursLogs' => $hoursLogs
-        );
-    });
-};
 
 /**
- * Retrieves info on all pre-outreach and pre-event surveys that the user has submitted.
+ * If the user is a Volunteer Distributor, get not-completed TAT App Outreach Locations belonging to the user's team lead.
+ * If the user is an Ambassador Volunteer, get not-completed Campaign/Events.
  * URL: /api/getUserData?parts=unfinishedActivities
  */
 $apiFunctions['getUserData']['unfinishedActivities'] = function ( $contactID ) {
-    $queryFields = array(
-        'Id',
-        'Name__c',
-        'Type__c',
-        'Address__c',
-        'City__c',
-        'State__c',
-        'Zip__c',
-        'Date__c',
-        'Completed__c'
-    );
-    // get all unfinished Volunteer Activity objects
-    return getAllSalesforceQueryRecordsAsync( "SELECT " . implode(',', $queryFields) . " FROM TAT_App_Volunteer_Activity__c WHERE Contact__c = '$contactID' AND Completed__c = false" )->then(
-        function( $records ) {
-            // convert activities to a better format
-            $unfinishedActivities = array();
-            foreach( $records as $record ) {
-                array_push( $unfinishedActivities, (object)array(
-                    'id' => $record->Id,
-                    'name' => $record->Name__c,
-                    'type' => $record->Type__c,
-                    'address' => $record->Address__c,
-                    'city' => $record->City__c,
-                    'state' => $record->State__c,
-                    'zip' => $record->Zip__c,
-                    'date' => $record->Date__c
-                ));
-            }
+    // first get the user's volunteer type
+    return salesforceAPIGetAsync(
+        "sobjects/Contact/${contactID}/",
+        array( 'fields' => 'TAT_App_Volunteer_Type__c,TAT_App_Team_Coordinator__c' )
+    )->then( function($response) {
+        // get all the Outreach Locations for the user's team lead, which haven't been completed
+        if ( $response->TAT_App_Volunteer_Type__c === 'volunteerDistributor' ) {
+            $queryFields = array(
+                'Name',
+                'Planned_Date__c',
+                'Is_Completed__c',
+                'Team_Lead__c',
+                'Type__c',
+                'Address__c',
+                'City__c',
+                'State__c',
+                'Zip__c',
+                'Contact_Name__c',
+                'Contact_Title__c',
+                'Contact_Email__c',
+                'Contact_Phone__c',
+            );
+            
+            $teamCoordinator = $response->TAT_App_Team_Coordinator__c;
+            return getAllSalesforceQueryRecordsAsync(
+                "SELECT " . implode(',', $queryFields) . " FROM TAT_App_Outreach_Location__c " .
+                "WHERE Team_Lead__c = '$teamCoordinator' " .
+                "AND Is_Completed__c = false"
+            )->then( function( $records ) {
+                // convert to a better format
+                $unfinishedOutreachLocations = array();
+                foreach( $records as $record ) {
+                    array_push( $unfinishedOutreachLocations, (object)array(
+                        'id' => $record->Id,
+                        'name' => $record->Name,
+                        'type' => $record->Type__c,
+                        'address' => $record->Address__c,
+                        'city' => $record->City__c,
+                        'state' => $record->State__c,
+                        'zip' => $record->Zip__c,
+                        'date' => $record->Planned_Date__c,
+                        'contact' => (object)array(
+                            'name' => $record->Contact_Name__c,
+                            'title' => $record->Contact_Title__c,
+                            'email' => $record->Contact_Email__c,
+                            'phone' => $record->Contact_Phone__c
+                        )
+                    ));
+                }
 
-            return array( 'unfinishedActivities' => $unfinishedActivities );
+                return array( 'outreachLocations' => $unfinishedOutreachLocations );
+            });
+
+        } else {
+            // @@TODO
         }
-    );
+    });
+    
 };

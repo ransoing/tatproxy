@@ -1,7 +1,7 @@
 <?php
 
 /**
- * The high-level code for the createHoursLogEntry API call.
+ * The high-level code for the createTestimonial API call.
  * See index.php for usage details.
  * 
  * Adds an Event activity on the user's Contact object in Salesforce, containing details on the completed survey.

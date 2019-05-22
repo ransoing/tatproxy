@@ -11,18 +11,55 @@
 require_once( '../functions.php' );
 require_once( '../api-support-functions.php' );
 
+/**
+ * @@ new input structure:
+campaignId,
+locations: [{
+	name,
+	type,
+	address,
+	city,
+	state,
+	zip,
+	date,
+	hasContactedManager,
+	contactName,
+	contactTitle,
+	contactEmail,
+	contactPhone
+}],
+isReadyToReceive,
+mailingAddress,
+mailingCity,
+mailingState,
+mailingZip,
+feelsPrepared,
+questions
+
+ */
+
+makeSalesforceRequestWithTokenExpirationCheck( function() {
+    return getAllSalesforceQueryRecordsAsync( "SELECT Id, FirstName, LastName FROM Contact WHERE TAT_App_Firebase_UID__c != NULL" );
+})->then( function($a) {
+    print_r($a);
+})->otherwise( $handleRequestFailure );
+
+$loop->run();
+
+exit;
+
 // verify the firebase login and get the user's firebase uid.
 $firebaseUid = verifyFirebaseLogin();
 $postData = getPOSTData();
 // map POST data to salesforce fields
 $sfData = array(
-    'Name__c' =>    $postData->locationName,
+    'Name' =>       $postData->locationName,
     'Type__c' =>    $postData->locationType,
     'Address__c' =>  $postData->locationAddress,
     'City__c' =>    $postData->locationCity,
     'State__c' =>   $postData->locationState,
     'Zip__c' =>     $postData->locationZip,
-    'Date__c' =>    $postData->date
+    'Planned_Date__c' =>    $postData->date
 );
 
 $locationType = getLocationType( $postData->locationType );
