@@ -626,7 +626,7 @@ Content-Type: application/json
 		<!-- ==================================== -->
 		<a name="createPreOutreachSurvey"></a>
 		<h2>createPreOutreachSurvey</h2>
-		<p><b>createPreOutreachSurvey</b> adds the data from a pre-outreach survey to Salesforce. Creates a Volunteer Activity object for each volunteer on the user's team.</p>
+		<p><b>createPreOutreachSurvey</b> adds the data from a pre-outreach survey to Salesforce. Creates multiple Outreach Location objects associated with the submitter's campaign.</p>
 
 		<h3>Make a POST request to:</h3>
 		<pre>/api/createPreOutreachSurvey</pre>
@@ -642,39 +642,11 @@ Content-Type: application/json
 				</p>
 			</div>
 			<div>
-				<p><code>locationName</code> {string} (required)</p>
-				<p>A friendly name of the location to be visited.</p>
+				<p><code>campaignId</code> {string} (required)</p>
+				<p>The salesforce ID of the campaign related to the outreach locations submitted in this survey.</p>
 			</div>
 			<div>
-				<p><code>locationType</code> {string} (required)</p>
-				<p>The type of location. Valid values are <code>cdlSchool</code>, <code>truckingCompany</code>, and <code>truckStop</code>.</p>
-			</div>
-			<div>
-				<p><code>locationAddress</code> {string} (required)</p>
-				<p>The street address of the location to be visited.</p>
-			</div>
-			<div>
-				<p><code>locationCity</code> {string} (required)</p>
-				<p>The city of the location to be visited.</p>
-			</div>
-			<div>
-				<p><code>locationState</code> {string} (required)</p>
-				<p>The state of the location to be visited.</p>
-			</div>
-			<div>
-				<p><code>locationZip</code> {string} (required)</p>
-				<p>The zip code of the location to be visited.</p>
-			</div>
-			<div>
-				<p><code>date</code> {string, YYYY-MM-DD} (required)</p>
-				<p>The date when the volunteer is planning on visiting the location.</p>
-			</div>
-			<div>
-				<p><code>hasContactedManager</code> {boolean} (required)</p>
-				<p>Whether the user has contacted the manager of the location.</p>
-			</div>
-			<div>
-				<p><code>isReadyToReceive</code> {boolean}</p>
+				<p><code>isReadyToReceive</code> {boolean} (required)</p>
 				<p>Whether the user is ready to receive TAT materials.</p>
 			</div>
 			<div>
@@ -693,12 +665,81 @@ Content-Type: application/json
 				<p><code>mailingZip</code> {string}</p>
 				<p>The zip code to send TAT materials to.</p>
 			</div>
+			<div>
+				<p><code>feelsPrepared</code> {boolean}</p>
+				<p>Whether the user feels prepared to perform outreach duties.</p>
+			</div>
+			<div>
+				<p><code>questions</code> {string}</p>
+				<p>Questions the user may have for TAT staff.</p>
+			</div>
+			<div>
+				<p><code>locations</code> {object[]} (required)</p>
+				<p>An array of locations that the team will perform outreach activities at. This array may not be longer than 200 items.</p>
+			</div>
+			<div>
+				<p><code>locations[].name</code> {string} (required)</p>
+				<p>A friendly name of the location to be visited.</p>
+			</div>
+			<div>
+				<p><code>locations[].type</code> {string} (required)</p>
+				<p>The type of location. Valid values are <code>cdlSchool</code>, <code>truckingCompany</code>, and <code>truckStop</code>.</p>
+			</div>
+			<div>
+				<p><code>locations[].address</code> {string} (required)</p>
+				<p>The street address of the location to be visited.</p>
+			</div>
+			<div>
+				<p><code>locations[].city</code> {string} (required)</p>
+				<p>The city of the location to be visited.</p>
+			</div>
+			<div>
+				<p><code>locations[].state</code> {string} (required)</p>
+				<p>The state of the location to be visited.</p>
+			</div>
+			<div>
+				<p><code>locations[].zip</code> {string} (required)</p>
+				<p>The zip code of the location to be visited.</p>
+			</div>
+			<div>
+				<p><code>locations[].date</code> {string, YYYY-MM-DD} (required)</p>
+				<p>The date when the volunteer is planning on visiting the location.</p>
+			</div>
+			<div>
+				<p><code>locations[].hasContactedManager</code> {boolean} (required)</p>
+				<p>Whether the user has contacted the manager (or some other employee) of the location.</p>
+			</div>
+			<div>
+				<p><code>locations[].contactName</code> {string}</p>
+				<p>The name of the contacted individual.</p>
+			</div>
+			<div>
+				<p><code>locations[].contactTitle</code> {string}</p>
+				<p>The professional title of the contacted individual.</p>
+			</div>
+			<div>
+				<p><code>locations[].contactEmail</code> {string}</p>
+				<p>The email address of the contacted individual.</p>
+			</div>
+			<div>
+				<p><code>locations[].contactPhone</code> {string}</p>
+				<p>The phone number of the contacted individual.</p>
+			</div>
+			
 		</section>
 		
 		<h3>Response payload</h3>
 		<pre>{
     success: true
 }</pre>
+
+		<h3>Error codes <a class="help" href="#error-format">?</a></h3>
+		<section>
+			<div>
+				<p><code>TOO_MANY_LOCATIONS</code></p>
+				<p>The locations array has more than 200 items.</p>
+			</div>
+		</section>
 
 		<h3>Example request</h3>
 		<pre>// URL:
@@ -710,12 +751,18 @@ Content-Type: application/json
 // Request body:
 {
     "firebaseIdToken": "abcd1234",
-    "locationName": "Love's",
-    "locationAddress": "1234 Wowee St.",
-    "locationCity": "Blakefield",
-    "locationState": "OK",
-    "locationZip": "45454",
-    "hasContactedManager": false
+	"campaignId": "qrst4321",
+	"isReadyToReceive": false,
+	"locations": [
+		{
+			"name": "Love's",
+			"address": "1234 Wowee St.",
+			"city": "Blakefield",
+			"state": "OK",
+			"zip": "45454",
+			"hasContactedManager": false
+		}
+	]
 }</pre>
 
 
@@ -738,20 +785,28 @@ Content-Type: application/json
 				</p>
 			</div>
 			<div>
-				<p><code>activityId</code> {string} (required)</p>
-				<p>The ID of a Volunteer Activity object in Salesforce.</p>
+				<p><code>outreachLocationId</code> {string} (required)</p>
+				<p>The ID of an Outreach Location object in Salesforce.</p>
+			</div>
+			<div>
+				<p><code>totalHours</code> {number} (required)</p>
+				<p>The total number of man-hours spent by the volunteer team on this outreach effort.</p>
+			</div>
+			<div>
+				<p><code>completionDate</code> {string, YYYY-MM-DD} (required)</p>
+				<p>The date on which the outreach activity was performed.</p>
 			</div>
 			<div>
 				<p><code>accomplishments</code> {string} (required)</p>
-				<p>A list of the volunteer's accomplishments during his outreach work at the location and time specified by the pre-outreach survey.</p>
+				<p>A description of the accomplishments made by the volunteer team during their outreach effort.</p>
 			</div>
 			<div>
 				<p><code>willFollowUp</code> {boolean} (required)</p>
-				<p>Whether the user will follow up with management at the location.</p>
+				<p>Whether the volunteer team will follow up with additional outreach.</p>
 			</div>
 			<div>
 				<p><code>followUpDate</code> {string, YYYY-MM-DD}</p>
-				<p>The date of the planned follow-up.</p>
+				<p>When the additional follow-up will be performed.</p>
 			</div>
 		</section>
 		
@@ -759,14 +814,6 @@ Content-Type: application/json
 		<pre>{
     success: true
 }</pre>
-
-		<h3>Error codes <a class="help" href="#error-format">?</a></h3>
-		<section>
-			<div>
-				<p><code>INVALID_ACTIVITY_ID</code></p>
-				<p>There is no activity with that ID that belongs to the specified user.</p>
-			</div>
-		</section>
 
 		<h3>Example request</h3>
 		<pre>// URL:
@@ -778,7 +825,11 @@ Content-Type: application/json
 // Request body:
 {
     "firebaseIdToken": "abcd1234",
-    "activityId": "IOJEHW8nEhehoh"
+    "outreachLocationId": "IOJEHW8nEhehoh",
+	"totalHours": 14,
+	"completionDate": "2019-03-12",
+	"accomplishments": "Distributed posters; Manager will now train employees",
+	"willFollowUp": false
 }</pre>
 
 		<!-- ==================================== -->

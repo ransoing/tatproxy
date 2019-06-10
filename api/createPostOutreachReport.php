@@ -4,9 +4,7 @@
  * The high-level code for the createPostOutreachReport API call.
  * See index.php for usage details.
  * 
- * Modifies a Volunteer Activity object associated with the user's Contact entry --
- * marks it as complete.
- * Also creates an Event activity on the user's Contact object.
+ * Modifies an Outreach Location object, marking it as complete and adding some details.
  */
 
 require_once( '../functions.php' );
@@ -16,49 +14,31 @@ require_once( '../api-support-functions.php' );
 $firebaseUid = verifyFirebaseLogin();
 $postData = getPOSTData();
 
-// sanitize activityId by removing quotes
-$activityId = str_replace( array("'", '"'), "", $postData->activityId );
+// sanitize outreachLocationId by removing quotes
+$postData->outreachLocationId = str_replace( array("'", '"'), "", $postData->outreachLocationId );
 
-// verify that the Volunteer Activity belongs to the user
-getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postData, $activityId) {
-    // get a list of volunteer activities for this user.
-    return makeSalesforceRequestWithTokenExpirationCheck( function() use ($contactID, $activityId) {
-        return getAllSalesforceQueryRecordsAsync( "SELECT Id, Name__c, Type__c, Address__c, City__c, State__c, Zip__c FROM TAT_App_Volunteer_Activity__c WHERE Contact__c = '$contactID' AND Id = '$activityId'" );
-    })->then( function( $activities ) use($activityId, $postData, $contactID) {
-        if ( sizeof($activities) == 0 ) {
-            $message = json_encode((object)array(
-                'errorCode' => 'INVALID_ACTIVITY_ID',
-                'message' => 'There is no activity with that ID that belongs to the specified user.'
-            ));
-            errorExit( 400, $message );
-        }
+getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postData) {
 
-        // modify the activity
-        $params = array( 'Completed__c' => true );
-        return salesforceAPIPatchAsync( 'sobjects/TAT_App_Volunteer_Activity__c/' . $activityId, $params )->then( function() use($postData, $contactID, $activities) {
-            // create an Event on the user's Contact
-            // convert POST data to Event text
-            $activity = $activities[0]; // there will only be one since we queried by ID
-            $type = getLocationType( $activity->Type__c );
-            $now = date('c');
-            $eventData = array(
-                'Subject' =>  'TAT App Post-Outreach Report response',
-                'Description' => formatQAs(
-                    array( 'What location did you visit?', implode("\n", array(
-                        "{$activity->Name__c} ({$type})",
-                        $activity->Address__c,
-                        "{$activity->City__c}, {$activity->State__c} {$activity->Zip__c}"
-                    ))),
-                    array( 'What were you able to accomplish?', $postData->accomplishments ),
-                    array( 'Do you plan to follow up with your contact?', $postData->willFollowUp ? 'Yes' : 'No' ),
-                    array( 'When will you follow up?', $postData->followUpDate )
-                ),
-                'StartDateTime' =>  $now,
-                'EndDateTime' =>    $now,
-                'WhoId' => $contactID
-            );
-    
-            return salesforceAPIPostAsync( 'sobjects/Event/', $eventData );
+    $miscAnswers = formatQAs(
+        array( 'What were you able to accomplish?', $postData->accomplishments ),
+        array( 'Do you plan to follow up with your contact?', $postData->willFollowUp ),
+        array( 'When will you follow up?', $postData->followUpDate )
+    );
+
+    $sfData = array(
+        'Is_Completed__c' => true,
+        'Completion_Date__c' => $postData->completionDate,
+        'Total_Man_Hours__c' => $postData->totalHours,
+        'Post_Outreach_Report_Submitted_By__c' => $contactID,
+        'Misc_Post_Outreach_Report_Answers__c' => $miscAnswers
+    );
+
+    return makeSalesforceRequestWithTokenExpirationCheck( function() use ($sfData, $postData) {
+        // modify the outreach location
+        return salesforceAPIPatchAsync( 'sobjects/TAT_App_Volunteer_Activity__c/' . $postData->outreachLocationId, $sfData )->then( function() use($postData, $contactID) {
+            // @@TODO create/modify objects in salesforce depending on the specific accomplishments made
+            // @@TODO send an email
+            return true;
         });
     });
 })->then( function() {

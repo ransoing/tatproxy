@@ -326,7 +326,7 @@ function refreshSalesforceTokenAsync() {
  * Returns a promise which resolves with the ID of the newly created object.
  * 
  * example:
- * createNewSFOjbject( 'iojewfoij32', '/sobjects/Contact/', array('Name'=>'Bob') );
+ * createNewSFOjbject( 'iojewfoij32', 'sobjects/Contact/', array('Name'=>'Bob') );
  */
 function createNewSFObject( $firebaseUid, $sfUrl, $sfData, $contactIDFieldName = false ) {
     // Get the ID of the Contact entry in salesforce
