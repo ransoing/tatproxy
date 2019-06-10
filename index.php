@@ -130,7 +130,7 @@ require_once( 'functions.php' );
 		<a name="checkRegistrationCode"></a>
 		<h2>checkRegistrationCode</h2>
 		<p>
-			<b>checkRegistrationCode</b> verifies whether a registration code is valid.
+			<b>checkRegistrationCode</b> verifies whether a registration code is valid. If it is, it returns the related volunteer type and any other related information (like campaign ID).
 		</p>
 
 		<h3>Make a GET request to:</h3>
@@ -146,7 +146,15 @@ require_once( 'functions.php' );
 
 		<h3>Response payload</h3>
 		<pre>{
-    success: true
+    success: true,
+	volunteerType: 'volunteerDistributor' | 'ambassadorVolunteer',
+	// for volunteerDistributor users:
+	accountId: {string}, // representing one or more teams of volunteers
+	isIndividualDistributor: {boolean},
+	teamCoordinators: {
+		name: {string},
+		salesforceId: {string}
+	}[]
 }</pre>
 
 		<h3>Error codes <a class="help" href="#error-format">?</a></h3>
@@ -210,11 +218,19 @@ require_once( 'functions.php' );
 		<a name="getTeamCoordinators"></a>
 		<h2>getTeamCoordinators</h2>
 		<p>
-			<b>getTeamCoordinators</b> returns the Salesforce Contact IDs and names for all users who are listed as volunteer team coordinators.
+			<b>getTeamCoordinators</b> returns the Salesforce Contact IDs and names for all users who are listed as volunteer team coordinators for a given Account.
 		</p>
 
 		<h3>Make a GET request to:</h3>
 		<pre>/api/getTeamCoordinators</pre>
+
+		<h3>GET parameters</h3>
+		<section>
+			<div>
+				<p><code>accountId</code> {string} (required)</p>
+				<p>The Salesforce ID of an Account.</p>
+			</div>
+		</section>
 
 		<h3>Response payload</h3>
 		<pre>[
@@ -229,7 +245,7 @@ require_once( 'functions.php' );
 ]</pre>
 
 		<h3>Example request</h3>
-		<pre>GET /api/getTeamCoordinators</pre>
+		<pre>GET /api/getTeamCoordinators?accountId=j9KeT4</pre>
 
 
 		<!-- ==================================== -->
@@ -297,12 +313,8 @@ require_once( 'functions.php' );
 				<p>The zip code of the user's mailing address.</p>
 			</div>
 			<div>
-				<p><code>partOfTeam</code> {boolean}</p>
-				<p>Whether the user is part of a volunteer team.</p>
-			</div>
-			<div>
 				<p><code>isCoordinator</code> {boolean}</p>
-				<p>Whether the user is a team coordinator.</p>
+				<p>Whether the user is a team coordinator. This should also be set to true if the user is an individual distributor volunteer.</p>
 			</div>
 			<div>
 				<p><code>coordinatorId</code> {string}</p>

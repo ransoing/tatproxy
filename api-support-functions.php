@@ -287,6 +287,23 @@ function getNextRecordsAsync( $response, &$records ) {
     }
 }
 
+
+function getTeamCoordinators( $accountId ) {
+    return getAllSalesforceQueryRecordsAsync(
+        "SELECT Id, FirstName, LastName from Contact WHERE TAT_App_Is_Team_Coordinator__c = true AND AccountId = '${accountId}'"
+    )->then( function($records) {
+        // convert the results to a pleasant format
+        $coordinators = array();
+        foreach( $records as $record ) {
+            array_push( $coordinators, array(
+                'name' => "{$record->FirstName} {$record->LastName}",
+                'salesforceId' => $record->Id
+            ));
+        }
+        return $coordinators;
+    });
+}
+
 /**
  * Attempts to refresh the salesforce access token. Returns a promise. Resolves with true on success,
  * or rejects with an error object, which has ->getMessage() and ->getResponse()

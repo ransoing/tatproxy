@@ -15,13 +15,33 @@ if ( !isset($_GET['code']) ) {
     errorExit( 400, 'You must define the "code" GET parameter.' );
 }
 
-if ( $_GET['code'] === getConfig()->app->registrationPassword ) {
-    http_response_code( 200 );
-    echo json_encode( (object)array( 'success' => TRUE ), JSON_PRETTY_PRINT );
-} else {
-    $message = json_encode((object)array(
-        'errorCode' => 'INCORRECT_REGISTRATION_CODE',
-        'message' => 'The registration code was incorrect.'
-    ));
-    errorExit( 400, $message );
-}
+// check the submitted code against registration codes saved in sf
+$code = $_GET['code'];
+makeSalesforceRequestWithTokenExpirationCheck( function() use ($code) {
+    return getAllSalesforceQueryRecordsAsync( "SELECT Id from Account WHERE TAT_App_Registration_Code__c = '{$code}'" );
+})->then( function($records) {
+    if ( sizeof($records) === 0 ) {
+        $message = json_encode(array(
+            'errorCode' => 'INCORRECT_REGISTRATION_CODE',
+            'message' => 'The registration code was incorrect.'
+        ));
+        throw new Exception( $message );
+    } else {
+        // find the team coordinators associated with this Account
+        $accountId = $records[0]->Id;
+        return getTeamCoordinators( $accountId )->then( function($coordinators) use($accountId) {
+            echo json_encode( (object)array(
+                'success' => TRUE,
+                'accountId' => $accountId,
+                // @@ the following is placeholder data until we figure out a better way to do this
+                'volunteerType' => 'volunteerDistributor',
+                'isIndividualDistributor' => false,
+                'teamCoordinators' => $coordinators
+            ));
+        });
+    }
+})->otherwise(
+    $handleRequestFailure
+);
+
+$loop->run();
