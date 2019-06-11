@@ -85,11 +85,11 @@ $apiFunctions['getUserData']['basic'] = function( $contactID ) {
         'TAT_App_Has_Watched_Training_Video__c',
         'FirstName',
         'LastName',
+        'AccountId',
         'TAT_App_Materials_Address__c',
         'TAT_App_Materials_City__c',
         'TAT_App_Materials_State__c',
         'TAT_App_Materials_Zip__c',
-        'TAT_App_Is_On_Volunteer_Team__c',
         'TAT_App_Is_Team_Coordinator__c',
         'TAT_App_Team_Coordinator__c'
     );
@@ -104,11 +104,11 @@ $apiFunctions['getUserData']['basic'] = function( $contactID ) {
             'hasCompletedTrainingFeedback' => $response->TAT_App_Has_Watched_Training_Video__c,
             'firstName' => $response->FirstName,
             'lastName' => $response->LastName,
+            'accountId' => $response->AccountId,
             'address' => $response->TAT_App_Materials_Address__c,
             'city' => $response->TAT_App_Materials_City__c,
             'state' => $response->TAT_App_Materials_State__c,
             'zip' => $response->TAT_App_Materials_Zip__c,
-            'isOnVolunteerTeam' => $response->TAT_App_Is_On_Volunteer_Team__c,
             'isTeamCoordinator' => $response->TAT_App_Is_Team_Coordinator__c,
             'teamCoordinatorId' => $response->TAT_App_Team_Coordinator__c
         );

@@ -30,59 +30,84 @@ if ( isset($postData->locations) && sizeof($postData->locations) > 200 ) {
 }
 
 getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postData) {
+    return makeSalesforceRequestWithTokenExpirationCheck( function() use ($contactID, $postData) {
+        // get details on the contact, so we can update the user's regular address fields if they are empty
+        return salesforceAPIGetAsync(
+            "sobjects/Contact/{$contactID}/",
+            array( 'fields' => 'npe01__Home_Address__c, npe01__Primary_Address_Type__c' )
+        );
+    })->then( function($contact) use ($contactID, $postData) {
+        // always update the TAT_App address fields
+        $addressData = array(
+            'TAT_App_Materials_Address__c' => $postData->mailingAddress,
+            'TAT_App_Materials_City__c' =>  $postData->mailingCity,
+            'TAT_App_Materials_State__c' => $postData->mailingState,
+            'TAT_App_Materials_Zip__c' =>   $postData->mailingZip
+        );
 
-    // create one TAT_App_Outreach_Location per object in $postData->locations
-    $outreachLocations = array();
-    foreach( $postData->locations as $location ) {
-        array_push( $outreachLocations, array(
-            'attributes' => array( 'type' => 'TAT_App_Outreach_Location__c' ),
-            'Campaign__c' =>    $postData->campaignId,
-            'Team_Lead__c' =>   $contactID,
-            'Name' =>           $location->name,
-            'Type__c' =>        $location->type,
-            'Address__c' =>     $location->address,
-            'City__c' =>        $location->city,
-            'State__c' =>       $location->state,
-            'Zip__c' =>         $location->zip,
-            'Planned_Date__c' =>    $location->date,
-            'Has_Contacted_Manager__c' => $location->hasContactedManager,
-            'Contact_Name__c' =>    $location->contactName,
-            'Contact_Title__c' =>   $location->contactTitle,
-            'Contact_Email__c' =>   $location->contactEmail,
-            'Contact_Phone__c' =>   $location->contactPhone
-        ));
-    }
+        // update the Contact's address info in SF if the home address field is empty
+        if ( empty($contact->npe01__Home_Address__c) ) {
+            $addressData['npe01__Home_Address__c'] = "{$postData->mailingAddress}, {$postData->mailingCity}, {$postData->mailingState} {$postData->mailingZip}";
+        }
+        // update the Contact's pimary address type if it's not yet set
+        if ( empty($contact->npe01__Primary_Address_Type__c) ) {
+            $addressData['npe01__Primary_Address_Type__c'] = 'Home';
+        }
+        // make the request to update the Contact
+        return salesforceAPIPatchAsync( 'sobjects/Contact/' . $contactID, $addressData );
 
-    // create an event on the user who submitted the survey, containing some other details.
-    $now = date('c');
-    $eventData = array(
-        'Subject' =>  'TAT App Pre-Outreach Survey Response',
-        'Description' => formatQAs(
-            array( 'Are you ready to receive TAT materials?', $postData->isReadyToReceive ? 'Yes' : 'No' ),
-            array( 'What is a good mailing address to send the materials to?', "{$postData->mailingAddress}\n{$postData->mailingCity}, {$postData->mailingState} {$postData->mailingZip}" ),
-            array( 'After watching the training video, do you feel equipped for your outreach?', $postData->feelsPrepared ? 'Yes' : 'No' ),
-            array( 'What questions do you have for TAT staff?', $postData->questions )
-        ),
-        'StartDateTime' =>  $now,
-        'EndDateTime' =>    $now
-    );
+    })->then( function() use ($postData, $contactID) {
 
-    // create Event on contact
-    return createNewSFObject( $firebaseUid, 'sobjects/Event/', $eventData, 'WhoId')->then( function($response) use ($outreachLocations) {
-        // id of new object is $response->id
+        // create one TAT_App_Outreach_Location per object in $postData->locations
+        $outreachLocations = array();
+        foreach( $postData->locations as $location ) {
+            array_push( $outreachLocations, array(
+                'attributes' => array( 'type' => 'TAT_App_Outreach_Location__c' ),
+                'Campaign__c' =>    $postData->campaignId,
+                'Team_Lead__c' =>   $contactID,
+                'Name' =>           $location->name,
+                'Type__c' =>        $location->type,
+                'Address__c' =>     $location->address,
+                'City__c' =>        $location->city,
+                'State__c' =>       $location->state,
+                'Zip__c' =>         $location->zip,
+                'Planned_Date__c' =>    $location->date,
+                'Has_Contacted_Manager__c' => $location->hasContactedManager,
+                'Contact_Name__c' =>    $location->contactName,
+                'Contact_Title__c' =>   $location->contactTitle,
+                'Contact_Email__c' =>   $location->contactEmail,
+                'Contact_Phone__c' =>   $location->contactPhone
+            ));
+        }
 
-        // create outreach locations
-        return salesforceAPIPostAsync( 'composite/sobjects/', array(
-            'allOrNone' => true,
-            'records' => $outreachLocations
-        ));
-    })->then( function($response) {
-        // check that the request was successful
-        return $response[0]->success;
+        // create an event on the user who submitted the survey, containing some other details.
+        $now = date('c');
+        $eventData = array(
+            'Subject' =>  'TAT App Pre-Outreach Survey Response',
+            'Description' => formatQAs(
+                array( 'Are you ready to receive TAT materials?', $postData->isReadyToReceive ? 'Yes' : 'No' ),
+                array( 'What is a good mailing address to send the materials to?', "{$postData->mailingAddress}\n{$postData->mailingCity}, {$postData->mailingState} {$postData->mailingZip}" ),
+                array( 'After watching the training video, do you feel equipped for your outreach?', $postData->feelsPrepared ? 'Yes' : 'No' ),
+                array( 'What questions do you have for TAT staff?', $postData->questions )
+            ),
+            'StartDateTime' =>  $now,
+            'EndDateTime' =>    $now
+        );
 
-        // @@@ Send an email with survey results
+        // create Event on contact
+        return createNewSFObject( $firebaseUid, 'sobjects/Event/', $eventData, 'WhoId')->then( function($response) use ($outreachLocations) {
+            // create outreach locations
+            return salesforceAPIPostAsync( 'composite/sobjects/', array(
+                'allOrNone' => true,
+                'records' => $outreachLocations
+            ));
+        })->then( function($response) {
+            // check that the request was successful
+            return $response[0]->success;
+
+            // @@@ Send an email with survey results
+        });
     });
-
 })->then( function() {
     echo '{"success": true}';
 })->otherwise(

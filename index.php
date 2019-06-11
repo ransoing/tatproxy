@@ -293,26 +293,6 @@ require_once( 'functions.php' );
 				<p>The user's last name. Required if <code>salesforceId</code> is not provided.</p>
 			</div>
 			<div>
-				<p><code>volunteerType</code> {string} (required)</p>
-				<p>The type of volunteer. Valid values are <code>volunteerDistributor</code> and <code>ambassadorVolunteer</code>.</p>
-			</div>
-			<div>
-				<p><code>mailingAddress</code> {string}</p>
-				<p>The street address part of the user's mailing address.</p>
-			</div>
-			<div>
-				<p><code>mailingCity</code> {string}</p>
-				<p>The city of the user's mailing address.</p>
-			</div>
-			<div>
-				<p><code>mailingState</code> {string}</p>
-				<p>The state of the user's mailing address.</p>
-			</div>
-			<div>
-				<p><code>mailingZip</code> {string}</p>
-				<p>The zip code of the user's mailing address.</p>
-			</div>
-			<div>
 				<p><code>isCoordinator</code> {boolean}</p>
 				<p>Whether the user is a team coordinator. This should also be set to true if the user is an individual distributor volunteer.</p>
 			</div>
@@ -351,8 +331,6 @@ Content-Type: application/json
     "firebaseIdToken": "abcd1234",
     "registrationCode": "correct-horse-battery-staple",
     "salesforceId": "JOF7EK0enoejMOE8",
-    "volunteerType": "volunteerDistributor",
-    "partOfTeam": true,
     "isCoordinator": true
 }</pre>
 
@@ -376,26 +354,6 @@ Content-Type: application/json
 				</p>
 			</div>
 			<div>
-				<p><code>volunteerType</code> {string} (required)</p>
-				<p>The type of volunteer. Valid values are <code>volunteerDistributor</code> and <code>ambassadorVolunteer</code>.</p>
-			</div>
-			<div>
-				<p><code>mailingAddress</code> {string}</p>
-				<p>The street address part of the user's mailing address.</p>
-			</div>
-			<div>
-				<p><code>mailingCity</code> {string}</p>
-				<p>The city of the user's mailing address.</p>
-			</div>
-			<div>
-				<p><code>mailingState</code> {string}</p>
-				<p>The state of the user's mailing address.</p>
-			</div>
-			<div>
-				<p><code>mailingZip</code> {string}</p>
-				<p>The zip code of the user's mailing address.</p>
-			</div>
-			<div>
 				<p><code>coordinatorId</code> {string}</p>
 				<p>The Contact ID of the user's team coordinator.</p>
 			</div>
@@ -416,8 +374,7 @@ Content-Type: application/json
 // Request body:
 {
     "firebaseIdToken": "abcd1234",
-    "volunteerType": "volunteerDistributor",
-    "mailingAddress": "1234 example st."
+    "coordinatorId": "KJD94JFR"
 }</pre>
 
 
@@ -467,12 +424,12 @@ Content-Type: application/json
     firstName: {string},
     lastName: {string},
     volunteerType: {string},
+	accountId: {string},
     hasWatchedTrainingVideo: {boolean},
     address: {string},
     city: {string},
     state: {string},
     zip: {string},
-    isOnVolunteerTeam: {boolean},
     isTeamCoordinator: {boolean},
     teamCoordinatorId: {string} // ContactID of the salesforce object representing the user's team coordinator
 }</pre>
