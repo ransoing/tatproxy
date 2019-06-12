@@ -36,7 +36,7 @@ $code = $postData->registrationCode;
 makeSalesforceRequestWithTokenExpirationCheck( function() use ($code) {
     // verify the registration code
     return getAllSalesforceQueryRecordsAsync( "SELECT Id from Account WHERE TAT_App_Registration_Code__c = '{$code}'" );
-})->then( function($records) use ($sfData, $firebaseUid) {
+})->then( function($records) use ($sfData, $postData, $firebaseUid) {
     if ( sizeof($records) === 0 ) {
         $message = json_encode(array(
             'errorCode' => 'INCORRECT_REGISTRATION_CODE',
@@ -50,45 +50,45 @@ makeSalesforceRequestWithTokenExpirationCheck( function() use ($code) {
     $sfData['TAT_App_Volunteer_Type__c'] = 'volunteerDistributor';
 
     // verify that no Contact in salesforce has the given firebaseUid
-    return getSalesforceContactID( $firebaseUid );
-})->then(
-    function() {
-        // we got a ContactID, which means this firebase user already has a salesforce entry! We shouldn't let the user proceed.
-        $message = json_encode((object)array(
-            'errorCode' => 'FIREBASE_USER_ALREADY_IN_SALESFORCE',
-            'message' => 'The specified Firebase user already has an associated Contact entry in Salesforce, and is not allowed to create a new one.'
-        ));
-        throw new Exception( $message );
-    },
-    function( $e ) {
-        if ( $e && @$e->getMessage() && json_decode( $e->getMessage() )->errorCode === 'FIREBASE_USER_NOT_IN_SALESFORCE' ) {
-            // this is what we were looking for; the user can proceed with making a new account.
-            return;
-        } else {
-            throw $e;
+    return getSalesforceContactID( $firebaseUid )->then(
+        function() {
+            // we got a ContactID, which means this firebase user already has a salesforce entry! We shouldn't let the user proceed.
+            $message = json_encode((object)array(
+                'errorCode' => 'FIREBASE_USER_ALREADY_IN_SALESFORCE',
+                'message' => 'The specified Firebase user already has an associated Contact entry in Salesforce, and is not allowed to create a new one.'
+            ));
+            throw new Exception( $message );
+        },
+        function( $e ) {
+            if ( $e && @$e->getMessage() && json_decode( $e->getMessage() )->errorCode === 'FIREBASE_USER_NOT_IN_SALESFORCE' ) {
+                // this is what we were looking for; the user can proceed with making a new account.
+                return;
+            } else {
+                throw $e;
+            }
         }
-    }
-)->then( function() use ($sfData, $postData) {
-    if ( empty($postData->salesforceId) ) {
-        // create a new Contact object
-        return salesforceAPIPostAsync( 'sobjects/Contact/', $sfData );
-    } else {
-        // update an existing contact object
-        // first, get details on the Contact -- if there is no email or phone, add data to those fields
-        return salesforceAPIGetAsync(
-            "sobjects/Contact/{$postData->salesforceId}/",
-            array( 'fields' => 'npe01__HomeEmail__c, HomePhone' )
-        )->then( function($contact) use ($sfData, $postData) {
-            if ( empty($contact->npe01__HomeEmail__c) ) {
-                $sfData['npe01__HomeEmail__c'] = $postData->email;
-            }
-            if ( empty($contact->HomePhone) ) {
-                $sfData['HomePhone'] = $postData->phone;
-            }
-            // update the Contact
-            return salesforceAPIPatchAsync( 'sobjects/Contact/' . $postData->salesforceId, $sfData );
-        });
-    }
+    )->then( function() use ($sfData, $postData) {
+        if ( empty($postData->salesforceId) ) {
+            // create a new Contact object
+            return salesforceAPIPostAsync( 'sobjects/Contact/', $sfData );
+        } else {
+            // update an existing contact object
+            // first, get details on the Contact -- if there is no email or phone, add data to those fields
+            return salesforceAPIGetAsync(
+                "sobjects/Contact/{$postData->salesforceId}/",
+                array( 'fields' => 'npe01__HomeEmail__c, HomePhone' )
+            )->then( function($contact) use ($sfData, $postData) {
+                if ( empty($contact->npe01__HomeEmail__c) ) {
+                    $sfData['npe01__HomeEmail__c'] = $postData->email;
+                }
+                if ( empty($contact->HomePhone) ) {
+                    $sfData['HomePhone'] = $postData->phone;
+                }
+                // update the Contact
+                return salesforceAPIPatchAsync( "sobjects/Contact/{$postData->salesforceId}/", $sfData );
+            });
+        }
+    });
 })->then( function($response) use($postData) {
     // echo the ID of the object created/updated
     echo json_encode( (object)array(

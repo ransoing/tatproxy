@@ -109,6 +109,7 @@ $apiFunctions['getUserData']['basic'] = function( $contactID ) {
             'city' => $response->TAT_App_Materials_City__c,
             'state' => $response->TAT_App_Materials_State__c,
             'zip' => $response->TAT_App_Materials_Zip__c,
+            'isOnVolunteerTeam' => true, // @@ get this info from the user's Account
             'isTeamCoordinator' => $response->TAT_App_Is_Team_Coordinator__c,
             'teamCoordinatorId' => $response->TAT_App_Team_Coordinator__c
         );
@@ -125,8 +126,8 @@ $apiFunctions['getUserData']['unfinishedActivities'] = function ( $contactID ) {
     // first get the user's volunteer type
     return salesforceAPIGetAsync(
         "sobjects/Contact/${contactID}/",
-        array( 'fields' => 'TAT_App_Volunteer_Type__c,TAT_App_Team_Coordinator__c' )
-    )->then( function($response) {
+        array( 'fields' => 'TAT_App_Volunteer_Type__c,TAT_App_Team_Coordinator__c,TAT_App_Is_Team_Coordinator__c' )
+    )->then( function($response) use ($contactID) {
         // get all the Outreach Locations for the user's team lead, which haven't been completed
         if ( $response->TAT_App_Volunteer_Type__c === 'volunteerDistributor' ) {
             $queryFields = array(
@@ -145,7 +146,7 @@ $apiFunctions['getUserData']['unfinishedActivities'] = function ( $contactID ) {
                 'Contact_Phone__c',
             );
             
-            $teamCoordinator = $response->TAT_App_Team_Coordinator__c;
+            $teamCoordinator = $response->TAT_App_Is_Team_Coordinator__c ? $contactID : $response->TAT_App_Team_Coordinator__c;
             return getAllSalesforceQueryRecordsAsync(
                 "SELECT " . implode(',', $queryFields) . " FROM TAT_App_Outreach_Location__c " .
                 "WHERE Team_Lead__c = '$teamCoordinator' " .

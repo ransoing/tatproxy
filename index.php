@@ -119,6 +119,7 @@ require_once( 'functions.php' );
 			<li><a href="#createNewUser">createNewUser</a></li>
 			<li><a href="#updateUser">updateUser</a></li>
 			<li><a href="#getUserData">getUserData</a></li>
+			<li><a href="#getCampaigns">getCampaigns</a></li>
 			<li><a href="#createTestimonial">createTestimonial</a></li>
 			<li><a href="#createTrainingVideoFeedback">createTrainingVideoFeedback</a></li>
 			<li><a href="#createPreOutreachSurvey">createPreOutreachSurvey</a></li>
@@ -481,6 +482,50 @@ Content-Type: application/json
 // Request body:
 { "firebaseIdToken": "abcd1234" }</pre>
 
+
+		<!-- ==================================== -->
+		<a name="getCampaigns"></a>
+		<h2>getCampaigns</h2>
+		<p>
+			<b>getCampaigns</b> returns a list of campaigns associated with a user.
+		</p>
+
+		<h3>Make a POST request to:</h3>
+		<pre>/api/getCampaigns</pre>
+
+		<h3>POST request body payload parameters</h3>
+		<section>
+			<div>
+				<p><code>firebaseIdToken</code> {string} (required)</p>
+				<p>
+					<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
+					from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
+					login state, and access various Firebase resources.
+				</p>
+			</div>
+		</section>
+
+		<h3>Response payload</h3>
+		<pre>[
+    {
+        name: {string},
+        salesforceId: {string},
+		daysSinceCreated: {number}
+    },
+    ...
+]</pre>
+
+		<h3>Example request</h3>
+		<pre>// URL:
+POST /api/getCampaigns
+
+// Headers:
+Content-Type: application/json
+
+// Request body:
+{
+    "firebaseIdToken": "abcd1234"
+}</pre>
 
 
 		<!-- ==================================== -->
