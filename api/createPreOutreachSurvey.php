@@ -29,12 +29,12 @@ if ( isset($postData->locations) && sizeof($postData->locations) > 200 ) {
     errorExit( 400, $message );
 }
 
-getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postData) {
+getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postData, $firebaseUid) {
     return makeSalesforceRequestWithTokenExpirationCheck( function() use ($contactID, $postData) {
         // get details on the contact, so we can update the user's regular address fields if they are empty
         return salesforceAPIGetAsync(
             "sobjects/Contact/{$contactID}/",
-            array( 'fields' => 'npe01__Home_Address__c, npe01__Primary_Address_Type__c' )
+            array( 'fields' => 'npe01__Home_Address__c' ) // @@ get MailingAddress instead of this?
         );
     })->then( function($contact) use ($contactID, $postData) {
         // always update the TAT_App address fields
@@ -45,18 +45,17 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
             'TAT_App_Materials_Zip__c' =>   $postData->mailingZip
         );
 
-        // update the Contact's address info in SF if the home address field is empty
-        if ( empty($contact->npe01__Home_Address__c) ) {
-            $addressData['npe01__Home_Address__c'] = "{$postData->mailingAddress}, {$postData->mailingCity}, {$postData->mailingState} {$postData->mailingZip}";
-        }
-        // update the Contact's pimary address type if it's not yet set
-        if ( empty($contact->npe01__Primary_Address_Type__c) ) {
-            $addressData['npe01__Primary_Address_Type__c'] = 'Home';
-        }
+        // // update the Contact's address info in SF if the home address field is empty
+        // @@ This requires setting the following fields: MailingStreet, MailingCity, MailingState, MailingPostalCode
+        // @@ The fields must be set rather exactly, i.e. the state must be "Colorado" and not "CO"
+        // if ( empty($contact->npe01__Home_Address__c) ) {
+        //     $addressData['npe01__Home_Address__c'] = "{$postData->mailingAddress}, {$postData->mailingCity}, {$postData->mailingState} {$postData->mailingZip}, United States";
+        // }
+
         // make the request to update the Contact
         return salesforceAPIPatchAsync( 'sobjects/Contact/' . $contactID, $addressData );
 
-    })->then( function() use ($postData, $contactID) {
+    })->then( function() use ($postData, $contactID, $firebaseUid) {
 
         // create one TAT_App_Outreach_Location per object in $postData->locations
         $outreachLocations = array();
@@ -104,6 +103,28 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
         })->then( function($response) {
             // check that the request was successful
             return $response[0]->success;
+        })->then( function() use ($contactID, $postData) {
+            // Add all team members to the campaign. First get all contacts who have this user as their team lead
+            return getAllSalesforceQueryRecordsAsync( "SELECT Id FROM Contact WHERE TAT_App_Team_Coordinator__c = '{$contactID}'" );
+        })->then( function($records) use ($postData) {
+            // create a CampaignMember linking each contact to the campaign
+            if ( sizeof($records) > 0 ) {
+                $campaignMembers = array();
+                foreach( $records as $record ) {
+                    array_push( $campaignMembers, array(
+                        'attributes' => array( 'type' => 'CampaignMember' ),
+                        'CampaignId' => $postData->campaignId,
+                        'ContactId' => $record->Id
+                    ));
+                }
+                // send it
+                return salesforceAPIPostAsync( 'composite/sobjects/', array(
+                    'allOrNone' => false,
+                    'records' => $campaignMembers
+                ));
+            } else {
+                return true;
+            }
 
             // @@@ Send an email with survey results
         });

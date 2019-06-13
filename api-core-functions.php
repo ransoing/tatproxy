@@ -131,6 +131,7 @@ $apiFunctions['getUserData']['unfinishedActivities'] = function ( $contactID ) {
         // get all the Outreach Locations for the user's team lead, which haven't been completed
         if ( $response->TAT_App_Volunteer_Type__c === 'volunteerDistributor' ) {
             $queryFields = array(
+                'Id',
                 'Name',
                 'Planned_Date__c',
                 'Is_Completed__c',
