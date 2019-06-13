@@ -124,7 +124,7 @@ require_once( 'functions.php' );
 			<li><a href="#createTrainingVideoFeedback">createTrainingVideoFeedback</a></li>
 			<li><a href="#createPreOutreachSurvey">createPreOutreachSurvey</a></li>
 			<li><a href="#createPostOutreachReport">createPostOutreachReport</a></li>
-			<li><a href="#deleteVolunteerActivity">deleteVolunteerActivity</a></li>
+			<li><a href="#deleteOutreachLocation">deleteOutreachLocation</a></li>
 		</ul>
 
 		<!-- ==================================== -->
@@ -847,12 +847,12 @@ Content-Type: application/json
 }</pre>
 
 		<!-- ==================================== -->
-		<a name="deleteVolunteerActivity"></a>
-		<h2>deleteVolunteerActivity</h2>
-		<p><b>deleteVolunteerActivity</b> removes an user's Volunteer Activity. This is typically used to cancel unfinished activities.</p>
+		<a name="deleteOutreachLocation"></a>
+		<h2>deleteOutreachLocation</h2>
+		<p><b>deleteOutreachLocation</b> removes an Outreach Location, typically because the volunteers no longer intend to visit it.</p>
 
 		<h3>Make a POST request to:</h3>
-		<pre>/api/deleteVolunteerActivity</pre>
+		<pre>/api/deleteOutreachLocation</pre>
 
 		<h3>POST request body payload parameters</h3>
 		<section>
@@ -865,8 +865,8 @@ Content-Type: application/json
 				</p>
 			</div>
 			<div>
-				<p><code>activityId</code> {string} (required)</p>
-				<p>The ID of a Volunteer Activity object in Salesforce. It must be an activity which is related to the user identified by the <code>firebaseIdToken</code>.</p>
+				<p><code>outreachLocationId</code> {string} (required)</p>
+				<p>The ID of an Outreach Location object in Salesforce.</p>
 			</div>
 		</section>
 		
@@ -875,17 +875,9 @@ Content-Type: application/json
     success: true
 }</pre>
 
-		<h3>Error codes <a class="help" href="#error-format">?</a></h3>
-		<section>
-			<div>
-				<p><code>INVALID_ACTIVITY_ID</code></p>
-				<p>There is no activity with that ID that belongs to the specified user.</p>
-			</div>
-		</section>
-
 		<h3>Example request</h3>
 		<pre>// URL:
-POST /api/deleteVolunteerActivity
+POST /api/deleteOutreachLocation
 
 // Headers:
 Content-Type: application/json
@@ -893,7 +885,7 @@ Content-Type: application/json
 // Request body:
 {
     "firebaseIdToken": "abcd1234",
-    "activityId": "IOJEHW8nEhehoh"
+    "outreachLocationId": "IOJEHW8nEhehoh"
 }</pre>
 
 

@@ -33,9 +33,9 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
         'Misc_Post_Outreach_Report_Answers__c' => $miscAnswers
     );
 
-    return makeSalesforceRequestWithTokenExpirationCheck( function() use ($sfData, $postData) {
+    return makeSalesforceRequestWithTokenExpirationCheck( function() use ($sfData, $postData, $contactID) {
         // modify the outreach location
-        return salesforceAPIPatchAsync( 'sobjects/TAT_App_Volunteer_Activity__c/' . $postData->outreachLocationId, $sfData )->then( function() use($postData, $contactID) {
+        return salesforceAPIPatchAsync( 'sobjects/TAT_App_Outreach_Location__c/' . $postData->outreachLocationId, $sfData )->then( function() use($postData, $contactID) {
             // @@TODO create/modify objects in salesforce depending on the specific accomplishments made
             // @@TODO send an email
             return true;
