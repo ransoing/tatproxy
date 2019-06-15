@@ -427,10 +427,11 @@ Content-Type: application/json
     volunteerType: {string},
 	accountId: {string},
     hasWatchedTrainingVideo: {boolean},
-    address: {string},
+    street: {string},
     city: {string},
     state: {string},
     zip: {string},
+	country: {string},
     isTeamCoordinator: {boolean},
     teamCoordinatorId: {string} // ContactID of the salesforce object representing the user's team coordinator
 }</pre>
@@ -447,10 +448,11 @@ Content-Type: application/json
             id: {string}, // the identifier of the Salesforce object representing the outreach activity or event activity
             name: {string},
             type: {'cdlSchool' | 'truckingCompany' | 'truckStop' | 'event'},
-            address: {string},
+            street: {string},
             city: {string},
             state: {string},
             zip: {string},
+			country: {string},
             date: {string (ISO-8601 or YYYY-MM-DD)}, // planned date of outreach, or date of event
             contact: { // the person to be contacted at the defined location
                 name: {string},
@@ -664,7 +666,7 @@ Content-Type: application/json
 				<p>Whether the user is ready to receive TAT materials.</p>
 			</div>
 			<div>
-				<p><code>mailingAddress</code> {string}</p>
+				<p><code>mailingStreet</code> {string}</p>
 				<p>The street address to send TAT materials to.</p>
 			</div>
 			<div>
@@ -678,6 +680,10 @@ Content-Type: application/json
 			<div>
 				<p><code>mailingZip</code> {string}</p>
 				<p>The zip code to send TAT materials to.</p>
+			</div>
+			<div>
+				<p><code>mailingCountry</code> {string}</p>
+				<p>The country to send TAT materials to.</p>
 			</div>
 			<div>
 				<p><code>feelsPrepared</code> {boolean}</p>
@@ -700,7 +706,7 @@ Content-Type: application/json
 				<p>The type of location. Valid values are <code>cdlSchool</code>, <code>truckingCompany</code>, and <code>truckStop</code>.</p>
 			</div>
 			<div>
-				<p><code>locations[].address</code> {string} (required)</p>
+				<p><code>locations[].street</code> {string} (required)</p>
 				<p>The street address of the location to be visited.</p>
 			</div>
 			<div>
@@ -714,6 +720,10 @@ Content-Type: application/json
 			<div>
 				<p><code>locations[].zip</code> {string} (required)</p>
 				<p>The zip code of the location to be visited.</p>
+			</div>
+			<div>
+				<p><code>locations[].country</code> {string} (required)</p>
+				<p>The country of the location to be visited.</p>
 			</div>
 			<div>
 				<p><code>locations[].date</code> {string, YYYY-MM-DD} (required)</p>
@@ -770,10 +780,11 @@ Content-Type: application/json
 	"locations": [
 		{
 			"name": "Love's",
-			"address": "1234 Wowee St.",
+			"street": "1234 Wowee St.",
 			"city": "Blakefield",
-			"state": "OK",
+			"state": "Oklahoma",
 			"zip": "45454",
+			"country": "United States",
 			"hasContactedManager": false
 		}
 	]

@@ -34,23 +34,28 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
         // get details on the contact, so we can update the user's regular address fields if they are empty
         return salesforceAPIGetAsync(
             "sobjects/Contact/{$contactID}/",
-            array( 'fields' => 'npe01__Home_Address__c' ) // @@ get MailingAddress instead of this?
+            array( 'fields' => 'MailingAddress' )
         );
     })->then( function($contact) use ($contactID, $postData) {
         // always update the TAT_App address fields
         $addressData = array(
-            'TAT_App_Materials_Address__c' => $postData->mailingAddress,
+            'TAT_App_Materials_Country__c' => $postData->mailingCountry,
+            'TAT_App_Materials_Street__c' => $postData->mailingStreet,
             'TAT_App_Materials_City__c' =>  $postData->mailingCity,
             'TAT_App_Materials_State__c' => $postData->mailingState,
             'TAT_App_Materials_Zip__c' =>   $postData->mailingZip
         );
 
-        // // update the Contact's address info in SF if the home address field is empty
-        // @@ This requires setting the following fields: MailingStreet, MailingCity, MailingState, MailingPostalCode
-        // @@ The fields must be set rather exactly, i.e. the state must be "Colorado" and not "CO"
-        // if ( empty($contact->npe01__Home_Address__c) ) {
-        //     $addressData['npe01__Home_Address__c'] = "{$postData->mailingAddress}, {$postData->mailingCity}, {$postData->mailingState} {$postData->mailingZip}, United States";
-        // }
+        // update the Contact's address info in SF if the home address field is empty (consider it empty if the state is not specified)
+        if ( empty($contact->MailingAddress->State) ) {
+            $addressData = array_merge( $addressData, array(
+                'MailingCountry' => $postData->mailingCountry,
+                'MailingStreet' => $postData->mailingStreet,
+                'MailingCity' => $postData->mailingCity,
+                'MailingState' => $postData->mailingState,
+                'MailingPostalCode' => $postData->mailingZip
+            ));
+        }
 
         // make the request to update the Contact
         return salesforceAPIPatchAsync( 'sobjects/Contact/' . $contactID, $addressData );
@@ -66,10 +71,11 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
                 'Team_Lead__c' =>   $contactID,
                 'Name' =>           $location->name,
                 'Type__c' =>        $location->type,
-                'Address__c' =>     $location->address,
+                'Street__c' =>      $location->street,
                 'City__c' =>        $location->city,
                 'State__c' =>       $location->state,
                 'Zip__c' =>         $location->zip,
+                'Country__c'=>      $location->country,
                 'Planned_Date__c' =>    $location->date,
                 'Has_Contacted_Manager__c' => $location->hasContactedManager,
                 'Contact_Name__c' =>    $location->contactName,
@@ -85,7 +91,7 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
             'Subject' =>  'TAT App Pre-Outreach Survey Response',
             'Description' => formatQAs(
                 array( 'Are you ready to receive TAT materials?', $postData->isReadyToReceive ? 'Yes' : 'No' ),
-                array( 'What is a good mailing address to send the materials to?', "{$postData->mailingAddress}\n{$postData->mailingCity}, {$postData->mailingState} {$postData->mailingZip}" ),
+                array( 'What is a good mailing address to send the materials to?', "{$postData->mailingStreet}\n{$postData->mailingCity}, {$postData->mailingState} {$postData->mailingZip}, {$postData->mailingCountry}" ),
                 array( 'After watching the training video, do you feel equipped for your outreach?', $postData->feelsPrepared ? 'Yes' : 'No' ),
                 array( 'What questions do you have for TAT staff?', $postData->questions )
             ),
