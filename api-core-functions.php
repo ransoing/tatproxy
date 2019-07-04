@@ -144,7 +144,8 @@ $apiFunctions['getUserData']['unfinishedActivities'] = function ( $contactID ) {
                 'State__c',
                 'Zip__c',
                 'Country__c',
-                'Contact_Name__c',
+                'Contact_First_Name__c',
+                'Contact_Last_Name__c',
                 'Contact_Title__c',
                 'Contact_Email__c',
                 'Contact_Phone__c',
@@ -170,7 +171,7 @@ $apiFunctions['getUserData']['unfinishedActivities'] = function ( $contactID ) {
                         'country' => $record->Country__c,
                         'date' => $record->Planned_Date__c,
                         'contact' => (object)array(
-                            'name' => $record->Contact_Name__c,
+                            'name' => $record->Contact_First_Name__c . ' ' . $record->Contact_Last_Name__c,
                             'title' => $record->Contact_Title__c,
                             'email' => $record->Contact_Email__c,
                             'phone' => $record->Contact_Phone__c

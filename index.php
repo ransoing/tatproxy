@@ -734,8 +734,12 @@ Content-Type: application/json
 				<p>Whether the user has contacted the manager (or some other employee) of the location.</p>
 			</div>
 			<div>
-				<p><code>locations[].contactName</code> {string}</p>
-				<p>The name of the contacted individual.</p>
+				<p><code>locations[].contactFirstName</code> {string}</p>
+				<p>The first name of the contacted individual.</p>
+			</div>
+			<div>
+				<p><code>locations[].contactLastName</code> {string}</p>
+				<p>The last name of the contacted individual.</p>
 			</div>
 			<div>
 				<p><code>locations[].contactTitle</code> {string}</p>

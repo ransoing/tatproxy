@@ -37,6 +37,11 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
             array( 'fields' => 'MailingAddress' )
         );
     })->then( function($contact) use ($contactID, $postData) {
+        // don't do this part if some mailing info was not provided
+        if ( !isset($postData->mailingZip) || empty($postData->mailingZip) ) {
+            return true;
+        }
+        
         // always update the TAT_App address fields
         $addressData = array(
             'TAT_App_Materials_Country__c' => $postData->mailingCountry,
@@ -78,7 +83,8 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
                 'Country__c'=>      $location->country,
                 'Planned_Date__c' =>    $location->date,
                 'Has_Contacted_Manager__c' => $location->hasContactedManager,
-                'Contact_Name__c' =>    $location->contactName,
+                'Contact_First_Name__c' =>    $location->contactFirstName,
+                'Contact_Last_Name__c' =>     $location->contactLastName,
                 'Contact_Title__c' =>   $location->contactTitle,
                 'Contact_Email__c' =>   $location->contactEmail,
                 'Contact_Phone__c' =>   $location->contactPhone
@@ -131,7 +137,17 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
             } else {
                 return true;
             }
-
+        })->then( function() use ($postData) {
+            // get the related opportunity
+            return getAllSalesforceQueryRecordsAsync( "SELECT Id from Opportunity WHERE CampaignId = '{$postData->campaignId}'" );
+        })->then( function($records) use ($postData) {
+            // for the related Opportunity, change the stage to "pledged"
+            if ( sizeof($records) > 0 ) {
+                $patchData = array( 'StageName' => 'Pledged' );
+                return salesforceAPIPatchAsync( 'sobjects/Opportunity/' . $records[0]->Id, $patchData );
+            } else {
+                return true;
+            }
             // @@@ Send an email with survey results
         });
     });
