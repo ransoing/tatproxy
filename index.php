@@ -89,6 +89,18 @@ require_once( 'functions.php' );
 		</div>
 	</section>
 
+	<section>
+		<header><img src="assets/mail-icon.png"> Mailer</header>
+		<div>
+			<?php if ( !$mailerSetUp ) : ?>
+				<p class="status error">Mailer not configured.</p>
+				<p>Edit <code>config.json</code> on the server to configure the mailer.</p>
+			<?php else: ?>
+				<p class="status ok">Configured.</p>
+			<?php endif; ?>
+		</div>
+	</section>
+
 	<hr>
 
 	<div class="api-docs">

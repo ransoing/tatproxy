@@ -1,5 +1,8 @@
 <?php
 
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
 require_once( __DIR__ . '/vendor/autoload.php' );
 
 $loop = \React\EventLoop\Factory::create();
@@ -7,6 +10,48 @@ $browser = new \Clue\React\Buzz\Browser( $loop );
 
 $config = null;
 $sfAuth = null;
+$mail = null;
+
+// set up the mailer
+getConfig();
+$mailerSetUp = true;
+if (
+	!isset($config->mailer) ||
+	!isset($config->mailer->host) ||
+	!isset($config->mailer->username) ||
+	!isset($config->mailer->password) ||
+	!isset($config->mailer->encryptionType) ||
+	!isset($config->mailer->port) ||
+	!isset($config->mailer->replyTo)
+) {
+	$mailerSetUp = false;
+} else {
+	$mail = new PHPMailer( true );
+	$mail->isSMTP();
+	$mail->Host       = $config->mailer->host;
+	$mail->SMTPAuth   = true;
+	$mail->Username   = $config->mailer->username;
+	$mail->Password   = $config->mailer->password;
+	$mail->SMTPSecure = $config->mailer->encryptionType;
+	$mail->Port       = $config->mailer->port;
+}
+
+function sendMail( $to, $subject, $htmlBody ) {
+	global $mail;
+	$mail->setFrom( $config->mailer->username, 'TAT App Proxy' );
+	$mail->addAddress( $to );
+	$mail->addReplyTo( $config->mailer->replyTo );
+	$mail->isHTML( true );
+	$mail->Subject = $subject;
+	$mail->Body = $htmlBody;
+	
+	try {
+		$mail->send();
+	} catch (Exception $e) {
+		// echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
+		// @@
+	}
+}
 
 $noConfigInstructions = 'Copy <code>config-sample.json</code> as <code>config.json</code> on the server and replace the sample values with real ones.';
 

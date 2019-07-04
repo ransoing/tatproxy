@@ -8,5 +8,13 @@
     "firebase": {
         "apiKey": "KRkBdyxvgyS4XVAEaQyQn1fvctDbAcIzHS4tvDy",
         "projectId": "some-project-name"
+    },
+    "mailer": {
+        "host": "smtp.gmail.com",
+        "username": "someuser@example.com",
+        "password": "9876abcd",
+        "encryptionType": "use 'tls' or 'ssl'",
+        "port": 587,
+        "replyTo": "somebody_else@example.com"
     }
 }
