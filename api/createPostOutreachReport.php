@@ -37,35 +37,37 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
         // modify the outreach location
         return salesforceAPIPatchAsync( 'sobjects/TAT_App_Outreach_Location__c/' . $postData->outreachLocationId, $sfData );
     })->then( function() use ($postData) {
-        // get the opportunity related to the Outreach Location's campaign
-        return getAllSalesforceQueryRecordsAsync( "SELECT Id FROM Opportunity WHERE CampaignId IN (SELECT Campaign__c FROM TAT_App_Outreach_Location__c WHERE Id = '{$postData->campaignId}' )" );
-    })->then( function($records) {
-        // change the Opportunity stage to Closed/Won
-        if ( sizeof($records) > 0 ) {
-            $patchData = array(
-                'StageName' => 'Closed/Won',
-                'CloseDate' => explode( 'T', date('c') )[0] // today, YYYY-MM-DD
-            );
-            return salesforceAPIPatchAsync( 'sobjects/Opportunity/' . $records[0]->Id, $patchData );
-        } else {
-            return true;
-        }
-    })->then( function() use ($postData) {
-        // get the outreach location's data, so we can create an Account in SF
-        $fields = array( 'Name', 'Contact_Email__c', 'Contact_First_Name__c', 'Contact_Last_Name__c', 'Contact_Phone__c', 'Contact__Title__c', 'Country__c', 'State__c', 'City__c', 'Street__c', 'Zip__c', 'Type__c' );
+        // get outreach location info
+        $fields = array( 'Id', 'Name', 'Contact_Email__c', 'Contact_First_Name__c', 'Contact_Last_Name__c', 'Contact_Phone__c', 'Contact__Title__c', 'Country__c', 'State__c', 'City__c', 'Street__c', 'Zip__c', 'Type__c', 'Campaign__c' );
         return salesforceAPIGetAsync(
             'sobjects/TAT_App_Outreach_Location__c/' . $postData->outreachLocationId,
             array('fields' => implode(',', $fields) )
         );
     })->then( function($outreachLocation) use ($postData) {
-        // search to see if this account already exists
+        // get the opportunity related to the Outreach Location's campaign
         return getAllSalesforceQueryRecordsAsync(
-            "SELECT Id FROM Account WHERE Name = '{$outreachLocation->name}' " .
-            "AND BillingState = '{$outreachLocation->State__c}' " .
-            "AND BillingCity = '{$outreachLocation->City__c}' " .
-            "AND BillingStreet = '{$outreachLocation->Street__c}'"
-        )->then( function($records) use ($postData) {
-            // ultimately return the ID of an Account
+            "SELECT Id FROM Opportunity WHERE CampaignId IN (SELECT Campaign__c FROM TAT_App_Outreach_Location__c WHERE Id = '{$outreachLocation->Campaign__c}' )"
+        )->then( function($records) {
+            // change the Opportunity stage to Closed/Won
+            if ( sizeof($records) > 0 ) {
+                $patchData = array(
+                    'StageName' => 'Closed/Won',
+                    'CloseDate' => explode( 'T', date('c') )[0] // today, YYYY-MM-DD
+                );
+                return salesforceAPIPatchAsync( 'sobjects/Opportunity/' . $records[0]->Id, $patchData );
+            } else {
+                return true;
+            }
+        })->then( function() use ($outreachLocation) {
+            // search to see if an account for this outreach location already exists
+            return getAllSalesforceQueryRecordsAsync(
+                "SELECT Id FROM Account WHERE Name = '{$outreachLocation->name}' " .
+                "AND BillingState = '{$outreachLocation->State__c}' " .
+                "AND BillingCity = '{$outreachLocation->City__c}' " .
+                "AND BillingStreet = '{$outreachLocation->Street__c}'"
+            );
+        })->then( function($records) use ($postData, $outreachLocation) {
+            // ultimately return the ID of an Account; either a new one or one that already exists
 
             if ( sizeof($records) > 0 ) {
                 // use this account.
@@ -96,6 +98,7 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
             });
 
         })->then( function($accountId) use ($postData, $outreachLocation) {
+            // ultimately return the ID of an account again
             if ( !empty($outreachLocation->Contact_First_Name__c) ) {
                 // create a Contact associated with the account
                 $fields = array(
@@ -110,16 +113,29 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
                 );
                 return salesforceAPIPostAsync( 'sobjects/Contact', $fields )->then( function($newContact) use ($accountId) {
                     // edit the Account to have the Contact we just created as the primary contact
-                    return salesforceAPIPatchAsync( 'sobjects/Account/' . $accountId, array(
-                        'npe01__One2OneContact__c' => $newContact->id
-                    ));
+                    return salesforceAPIPatchAsync( 'sobjects/Account/' . $accountId, array('npe01__One2OneContact__c' => $newContact->id) )->then( function() use ($accountId) {
+                        return $accountId;
+                    });
                 });
             } else {
+                return $accountId;
+            }
+        })->then( function($accountId) use ($outreachLocation) {
+            // send an email with results. First, get the person to send an email to --- the owner of the campaign.
+            return getAllSalesforceQueryRecordsAsync( "SELECT Username FROM User WHERE Id IN (SELECT OwnerId FROM Campaign WHERE Campaign.Id = '{$outreachLocation->Campaign__c}')" );
+        })->then( function($records) use ($postData, $outreachLocation) {
+            if ( sizeof($records) === 0 ) {
+                // nobody to email :(
                 return true;
             }
+            $instanceUrl = getSFAuth()->instance_url;
+            $emailContent = "<p>See the details <a href='{$instanceUrl}/lightning/r/TAT_App_Outreach_Location__c/{$outreachLocation->Id}/view'>in Salesforce</a>.</p>"
+                . "<p>Related Account: <a href='{$instanceUrl}/lightning/r/Account/{$accountId}/view'>see details in Salesforce</a>.<p>";
+            // the email address is the 'Username' field of the User object
+            sendMail( $records[0]->Username, 'Post-outreach report completed', $emailContent );
+            return true;
         });
         // @@TODO create/modify objects in salesforce depending on the specific accomplishments made
-        // @@TODO send an email
     });
 })->then( function() {
     echo '{"success": true}';
