@@ -60,7 +60,7 @@ require_once( 'functions.php' );
 				 */
 				
 				$config = getConfig();
-				$url = 'https://login.salesforce.com/services/oauth2/authorize?' . http_build_query( array(
+				$url = "${salesforceOAuthBase}/authorize?" . http_build_query( array(
 					'response_type' => 'code',
 					'client_id'		=> $config->salesforce->consumerKey,
 					'redirect_uri'  => $config->salesforce->authSuccessURL

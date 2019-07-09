@@ -309,13 +309,13 @@ function getTeamCoordinators( $accountId ) {
  * or rejects with an error object, which has ->getMessage() and ->getResponse()
  */
 function refreshSalesforceTokenAsync() {
-    global $browser;
+    global $browser, $salesforceOAuthBase;
     $sfAuth = getSFAuth();
     $config = getConfig();
 
     // get a new auth token using the refresh token
     return $browser->post(
-        'https://login.salesforce.com/services/oauth2/token',
+        "${salesforceOAuthBase}/token",
         array( 'Content-Type' => 'application/x-www-form-urlencoded' ),
         http_build_query( array(
             'grant_type'	=> 'refresh_token',

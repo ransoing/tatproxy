@@ -5,12 +5,14 @@ use PHPMailer\PHPMailer\Exception;
 
 require_once( __DIR__ . '/vendor/autoload.php' );
 
+// @@ $salesforceOAuthBase = 'https://login.salesforce.com/services/oauth2';
+$salesforceOAuthBase = 'https://test.salesforce.com/services/oauth2';
+
 $loop = \React\EventLoop\Factory::create();
 $browser = new \Clue\React\Buzz\Browser( $loop );
 
 $config = null;
 $sfAuth = null;
-$mail = null;
 
 // set up the mailer
 getConfig();
@@ -25,7 +27,10 @@ if (
 	!isset($config->mailer->replyTo)
 ) {
 	$mailerSetUp = false;
-} else {
+}
+
+function sendMail( $to, $subject, $htmlBody ) {
+	$config = getConfig();
 	$mail = new PHPMailer( true );
 	$mail->isSMTP();
 	$mail->Host       = $config->mailer->host;
@@ -34,10 +39,7 @@ if (
 	$mail->Password   = $config->mailer->password;
 	$mail->SMTPSecure = $config->mailer->encryptionType;
 	$mail->Port       = $config->mailer->port;
-}
 
-function sendMail( $to, $subject, $htmlBody ) {
-	global $mail;
 	$mail->setFrom( $config->mailer->username, 'TAT App Proxy' );
 	$mail->addAddress( $to );
 	$mail->addReplyTo( $config->mailer->replyTo );
@@ -278,6 +280,7 @@ function firebaseAuthAPIPost( $urlSegment, $data = array() ) {
  * Returns an array with 'error' if the request fails or if the response (expected to be json-formatted) cannot be parsed.
  */
 function salesforceAPIGet( $urlSegment, $data = array(), $allowRefreshAuthToken = true ) {
+	global $salesforceOAuthBase;
 	$sfAuth = getSFAuth();
 	$url = $sfAuth->instance_url . '/services/data/v44.0/' . $urlSegment . '.json?' . http_build_query( $data );
 	$ch = curl_init( $url );
@@ -306,7 +309,7 @@ function salesforceAPIGet( $urlSegment, $data = array(), $allowRefreshAuthToken 
 		// get a new auth token using the refresh token
 		$config = getConfig();
 		
-		$refreshResponse = post( 'https://login.salesforce.com/services/oauth2/token', array(
+		$refreshResponse = post( "${salesforceOAuthBase}/token", array(
 			'grant_type'	=> 'refresh_token',
 			'refresh_token'	=> $sfAuth->refresh_token,
 			'client_id'     => $config->salesforce->consumerKey,

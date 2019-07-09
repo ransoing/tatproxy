@@ -49,7 +49,7 @@ function doneExit( $message = '' ) {
     // The 'code' expires after 15 minutes. Use it now to get access and refresh tokens.
     $config = getConfig();
     $_GET['code'];
-    $response = post( 'https://login.salesforce.com/services/oauth2/token', array(
+    $response = post( "${salesforceOAuthBase}/token", array(
         'grant_type'    => 'authorization_code',
         'client_secret' => $config->salesforce->consumerSecret,
         'client_id'     => $config->salesforce->consumerKey,
