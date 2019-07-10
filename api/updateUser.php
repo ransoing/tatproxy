@@ -15,9 +15,14 @@ $firebaseUid = verifyFirebaseLogin();
 $postData = getPOSTData();
 
 // map POST data to salesforce fields
-$sfData = array(
-    'TAT_App_Team_Coordinator__c' => $postData->coordinatorId
-);
+$sfData = array();
+if ( isset($postData->coordinatorId) ) {
+    $sfData['TAT_App_Team_Coordinator__c'] = $postData->coordinatorId;
+}
+if ( isset($postData->hasWatchedTrainingVideo) ) {
+    $sfData['TAT_App_Has_Watched_Training_Video__c'] = $postData->hasWatchedTrainingVideo;
+}
+
 
 // Verify that the user has a Contact object
 getSalesforceContactID( $firebaseUid )->then( function($contactID) use($sfData) {

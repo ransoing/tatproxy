@@ -133,7 +133,6 @@ require_once( 'functions.php' );
 			<li><a href="#getUserData">getUserData</a></li>
 			<li><a href="#getCampaigns">getCampaigns</a></li>
 			<li><a href="#createTestimonial">createTestimonial</a></li>
-			<li><a href="#createTrainingVideoFeedback">createTrainingVideoFeedback</a></li>
 			<li><a href="#createPreOutreachSurvey">createPreOutreachSurvey</a></li>
 			<li><a href="#createPostOutreachReport">createPostOutreachReport</a></li>
 			<li><a href="#deleteOutreachLocation">deleteOutreachLocation</a></li>
@@ -370,6 +369,10 @@ Content-Type: application/json
 				<p><code>coordinatorId</code> {string}</p>
 				<p>The Contact ID of the user's team coordinator.</p>
 			</div>
+			<div>
+				<p><code>hasWatchedTrainingVideo</code> {boolean}</p>
+				<p>Whether the user has watched the training video.</p>
+			</div>
 		</section>
 		
 		<h3>Response payload</h3>
@@ -600,54 +603,6 @@ Content-Type: application/json
     "advice": "Show your passion for volunteering",
     "givesAnonPermission": true,
     "givesNamePermission": false
-}</pre>
-
-
-		<!-- ==================================== -->
-		<a name="createTrainingVideoFeedback"></a>
-		<h2>createTrainingVideoFeedback</h2>
-		<p><b>createTrainingVideoFeedback</b> adds info to Salesforce regarding feedback on training videos, and marks that the user has watched the videos.</p>
-
-		<h3>Make a POST request to:</h3>
-		<pre>/api/createTrainingVideoFeedback</pre>
-
-		<h3>POST request body payload parameters</h3>
-		<section>
-			<div>
-				<p><code>firebaseIdToken</code> {string} (required)</p>
-				<p>
-					<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
-					from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
-					login state, and access various Firebase resources.
-				</p>
-			</div>
-			<div>
-				<p><code>feelsPrepared</code> {boolean} (required)</p>
-				<p>Whether the user feels prepared to volunteer after watching the training videos.</p>
-			</div>
-			<div>
-				<p><code>questions</code> {string}</p>
-				<p>Additional questions that the user has after watching the videos.</p>
-			</div>
-		</section>
-		
-		<h3>Response payload</h3>
-		<pre>{
-    success: true
-}</pre>
-
-		<h3>Example request</h3>
-		<pre>// URL:
-POST /api/createTestimonial
-
-// Headers:
-Content-Type: application/json
-
-// Request body:
-{
-    "firebaseIdToken": "abcd1234",
-    "feelsPrepared": false,
-    "questions": "How do I properly ask people to donate to TAT?"
 }</pre>
 
 

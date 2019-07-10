@@ -102,7 +102,7 @@ $apiFunctions['getUserData']['basic'] = function( $contactID ) {
         return array(
             'salesforceId' => $contactID,
             'volunteerType' => $response->TAT_App_Volunteer_Type__c,
-            'hasCompletedTrainingFeedback' => $response->TAT_App_Has_Watched_Training_Video__c,
+            'hasWatchedTrainingVideo' => $response->TAT_App_Has_Watched_Training_Video__c,
             'firstName' => $response->FirstName,
             'lastName' => $response->LastName,
             'accountId' => $response->AccountId,
