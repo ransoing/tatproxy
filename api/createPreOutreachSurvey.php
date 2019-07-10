@@ -36,7 +36,7 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
             "sobjects/Contact/{$contactID}/",
             array( 'fields' => 'MailingAddress,FirstName,LastName' )
         );
-    })->then( function($contact) use ($contactID, $postData) {
+    })->then( function($contact) use ($contactID, $postData, $firebaseUid) {
         // don't do this part if some mailing info was not provided
         if ( !isset($postData->mailingZip) || empty($postData->mailingZip) ) {
             return true;
@@ -134,7 +134,7 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
                         return true;
                     }
                     // the email address is the 'Username' field of the User object
-                    sendMail( $records[0]->Username, 'Pre-outreach survey completed', $eventData['Description'] );
+                    sendMail( $records[0]->Username, 'Pre-outreach survey completed', str_replace("\n", "<br>", $eventData['Description']) );
                     return true;
                 });
             });
