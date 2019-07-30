@@ -9,6 +9,20 @@ if ( $_SERVER['REQUEST_METHOD'] === 'HEAD' || $_SERVER['REQUEST_METHOD'] === 'OP
     exit;
 }
 
+if ( !function_exists('getallheaders') ) {
+    function getallheaders() {
+        $headers = [];
+        foreach ( $_SERVER as $name => $value ) {
+            if (substr($name, 0, 5) == 'HTTP_') {
+                $headers[str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))))] = $value;
+            } else {
+                $headers[str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', $name))))] = $value;
+            }
+        }
+        return $headers;
+    }
+}
+
 function errorExit( $httpCode, $errorMessage ) {
     http_response_code( $httpCode );
     echo $errorMessage;
