@@ -28,7 +28,8 @@ if ( empty($postData->salesforceId) ) {
         'LastName' =>                   $postData->lastName,
         'npe01__HomeEmail__c' =>        $postData->email,
         'npe01__Preferred_Email__c' =>  'Personal',
-        'HomePhone' =>                  $postData->phone
+        'HomePhone' =>                  $postData->phone,
+        'npe01__PreferredPhone__c' =>   'Household'
     ));
 }
 
@@ -76,13 +77,19 @@ makeSalesforceRequestWithTokenExpirationCheck( function() use ($code) {
             // first, get details on the Contact -- if there is no email or phone, add data to those fields
             return salesforceAPIGetAsync(
                 "sobjects/Contact/{$postData->salesforceId}/",
-                array( 'fields' => 'npe01__HomeEmail__c, HomePhone' )
+                array( 'fields' => 'npe01__HomeEmail__c, HomePhone, npe01__Preferred_Email__c, npe01__PreferredPhone__c' )
             )->then( function($contact) use ($sfData, $postData) {
                 if ( empty($contact->npe01__HomeEmail__c) ) {
                     $sfData['npe01__HomeEmail__c'] = $postData->email;
                 }
+                if ( empty($contact->npe01__Preferred_Email__c) ) {
+                    $sfData['npe01__Preferred_Email__c'] = 'Personal';
+                }
                 if ( empty($contact->HomePhone) ) {
                     $sfData['HomePhone'] = $postData->phone;
+                }
+                if ( empty($contact->npe01__PreferredPhone__c) ) {
+                    $sfData['npe01__PreferredPhone__c'] = 'Household';
                 }
                 // update the Contact
                 return salesforceAPIPatchAsync( "sobjects/Contact/{$postData->salesforceId}/", $sfData );

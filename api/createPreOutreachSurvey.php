@@ -37,9 +37,11 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
             array( 'fields' => 'MailingAddress,FirstName,LastName' )
         );
     })->then( function($contact) use ($contactID, $postData, $firebaseUid) {
+        // ultimately return $contact
+
         // don't do this part if some mailing info was not provided
         if ( !isset($postData->mailingZip) || empty($postData->mailingZip) ) {
-            return true;
+            return $contact;
         }
         
         // always update the TAT_App address fields
@@ -63,80 +65,82 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
         }
 
         // make the request to update the Contact
-        return salesforceAPIPatchAsync( 'sobjects/Contact/' . $contactID, $addressData )->then( function() use ($postData, $contactID, $firebaseUid, $contact) {
+        return salesforceAPIPatchAsync( 'sobjects/Contact/' . $contactID, $addressData )->then( function() use ($contact) {
+            return $contact;
+        });
 
-            // create one TAT_App_Outreach_Location per object in $postData->locations
-            $outreachLocations = array();
-            $locationNamesOnly = array();
-            foreach( $postData->locations as $location ) {
-                array_push( $outreachLocations, array(
-                    'attributes' => array( 'type' => 'TAT_App_Outreach_Location__c' ),
-                    'Campaign__c' =>    $postData->campaignId,
-                    'Team_Lead__c' =>   $contactID,
-                    'Name' =>           $location->name,
-                    'Type__c' =>        $location->type,
-                    'Street__c' =>      $location->street,
-                    'City__c' =>        $location->city,
-                    'State__c' =>       $location->state,
-                    'Zip__c' =>         $location->zip,
-                    'Country__c'=>      $location->country,
-                    'Planned_Date__c' =>    $location->date,
-                    'Has_Contacted_Manager__c' => $location->hasContactedManager,
-                    'Contact_First_Name__c' =>    $location->contactFirstName,
-                    'Contact_Last_Name__c' =>     $location->contactLastName,
-                    'Contact_Title__c' =>   $location->contactTitle,
-                    'Contact_Email__c' =>   $location->contactEmail,
-                    'Contact_Phone__c' =>   $location->contactPhone
-                ));
+    })->then( function($contact) use ($postData, $contactID, $firebaseUid) {
+        // create one TAT_App_Outreach_Location per object in $postData->locations
+        $outreachLocations = array();
+        $locationNamesOnly = array();
+        foreach( $postData->locations as $location ) {
+            array_push( $outreachLocations, array(
+                'attributes' => array( 'type' => 'TAT_App_Outreach_Location__c' ),
+                'Campaign__c' =>    $postData->campaignId,
+                'Team_Lead__c' =>   $contactID,
+                'Name' =>           $location->name,
+                'Type__c' =>        $location->type,
+                'Street__c' =>      $location->street,
+                'City__c' =>        $location->city,
+                'State__c' =>       $location->state,
+                'Zip__c' =>         $location->zip,
+                'Country__c'=>      $location->country,
+                'Planned_Date__c' =>    $location->date,
+                'Has_Contacted_Manager__c' => $location->hasContactedManager,
+                'Contact_First_Name__c' =>    $location->contactFirstName,
+                'Contact_Last_Name__c' =>     $location->contactLastName,
+                'Contact_Title__c' =>   $location->contactTitle,
+                'Contact_Email__c' =>   $location->contactEmail,
+                'Contact_Phone__c' =>   $location->contactPhone
+            ));
 
-                array_push( $locationNamesOnly, "{$location->name} ({$location->street}, {$location->city}, {$location->state})" );
+            array_push( $locationNamesOnly, "{$location->name} ({$location->street}, {$location->city}, {$location->state})" );
+        }
+
+        // create outreach locations
+        return salesforceAPIPostAsync( 'composite/sobjects/', array(
+            'allOrNone' => true,
+            'records' => $outreachLocations
+        ))->then( function($responses) use ($firebaseUid, $postData, $locationNamesOnly, $contact, $contactID) {
+            // check that the request was successful
+            if ( !$responses[0]->success ) {
+                throw new Exception( 'Failed to create outreach locations.\n' . json_encode($responses) );
+            }
+            // create an event on the user who submitted the survey, containing some other details.
+            // first, convert id's of created objects to URLs
+            $instanceUrl = getSFAuth()->instance_url;
+            $urls = array();
+            foreach( $responses as $response ) {
+                array_push( $urls, $instanceUrl . '/lightning/r/TAT_App_Outreach_Location__c/' . $response->id . '/view' );
             }
 
-            // create outreach locations
-            return salesforceAPIPostAsync( 'composite/sobjects/', array(
-                'allOrNone' => true,
-                'records' => $outreachLocations
-            ))->then( function($responses) use ($firebaseUid, $postData, $locationNamesOnly, $contact, $contactID) {
-                // check that the request was successful
-                if ( !$responses[0]->success ) {
-                    throw new Exception( 'Failed to create outreach locations.\n' . json_encode($responses) );
-                }
-                // create an event on the user who submitted the survey, containing some other details.
-                // first, convert id's of created objects to URLs
-                $instanceUrl = getSFAuth()->instance_url;
-                $urls = array();
-                foreach( $responses as $response ) {
-                    array_push( $urls, $instanceUrl . '/lightning/r/TAT_App_Outreach_Location__c/' . $response->id . '/view' );
-                }
+            $now = date('c');
+            $eventData = array(
+                'Subject' =>  'TAT App Pre-Outreach Survey Response',
+                'Description' => formatQAs(
+                    array(' Volunteer:', "{$contact->FirstName} {$contact->LastName}\n{$instanceUrl}/lightning/r/Contact/{$contactID}/view" ),
+                    array( 'Are you ready to receive TAT materials?', $postData->isReadyToReceive ? 'Yes' : 'No' ),
+                    array( 'What is a good mailing address to send the materials to?', "{$postData->mailingStreet}\n{$postData->mailingCity}, {$postData->mailingState} {$postData->mailingZip}, {$postData->mailingCountry}" ),
+                    array( 'After watching the training video, do you feel equipped for your outreach?', $postData->feelsPrepared ? 'Yes' : 'No' ),
+                    array( 'What questions do you have for TAT staff?', $postData->questions ),
+                    array( 'Outreach locations:', implode( "\n", $locationNamesOnly) ),
+                    array( 'Links to outreach locations in Salesforce:', implode( "\n", $urls) )
+                ),
+                'StartDateTime' =>  $now,
+                'EndDateTime' =>    $now
+            );
 
-                $now = date('c');
-                $eventData = array(
-                    'Subject' =>  'TAT App Pre-Outreach Survey Response',
-                    'Description' => formatQAs(
-                        array(' Volunteer:', "{$contact->FirstName} {$contact->LastName}\n{$instanceUrl}/lightning/r/Contact/{$contactID}/view" ),
-                        array( 'Are you ready to receive TAT materials?', $postData->isReadyToReceive ? 'Yes' : 'No' ),
-                        array( 'What is a good mailing address to send the materials to?', "{$postData->mailingStreet}\n{$postData->mailingCity}, {$postData->mailingState} {$postData->mailingZip}, {$postData->mailingCountry}" ),
-                        array( 'After watching the training video, do you feel equipped for your outreach?', $postData->feelsPrepared ? 'Yes' : 'No' ),
-                        array( 'What questions do you have for TAT staff?', $postData->questions ),
-                        array( 'Outreach locations:', implode( "\n", $locationNamesOnly) ),
-                        array( 'Links to outreach locations in Salesforce:', implode( "\n", $urls) )
-                    ),
-                    'StartDateTime' =>  $now,
-                    'EndDateTime' =>    $now
-                );
-
-                return createNewSFObject( $firebaseUid, 'sobjects/Event/', $eventData, 'WhoId')->then( function() use ($postData) {
-                    // Send an email to the campaign owner. First get the owner of the campaign
-                    return getAllSalesforceQueryRecordsAsync( "SELECT Username FROM User WHERE Id IN (SELECT OwnerId FROM Campaign WHERE Campaign.Id = '{$postData->campaignId}')" );
-                })->then( function($records) use ($eventData) {
-                    if ( sizeof($records) === 0 ) {
-                        // nobody to email :(
-                        return true;
-                    }
-                    // the email address is the 'Username' field of the User object
-                    sendMail( $records[0]->Username, 'Pre-outreach survey completed', str_replace("\n", "<br>", $eventData['Description']) );
+            return createNewSFObject( $firebaseUid, 'sobjects/Event/', $eventData, 'WhoId')->then( function() use ($postData) {
+                // Send an email to the campaign owner. First get the owner of the campaign
+                return getAllSalesforceQueryRecordsAsync( "SELECT Username FROM User WHERE Id IN (SELECT OwnerId FROM Campaign WHERE Campaign.Id = '{$postData->campaignId}')" );
+            })->then( function($records) use ($eventData) {
+                if ( sizeof($records) === 0 ) {
+                    // nobody to email :(
                     return true;
-                });
+                }
+                // the email address is the 'Username' field of the User object
+                sendMail( $records[0]->Username, 'Pre-outreach survey completed', str_replace("\n", "<br>", $eventData['Description']) );
+                return true;
             });
         });
     })->then( function() use ($contactID, $postData) {
