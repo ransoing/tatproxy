@@ -1,5 +1,8 @@
 <?php
 
+// error_reporting(E_ALL | E_NOTICE); //@@##
+// ini_set('display_errors', TRUE);
+
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
@@ -29,10 +32,13 @@ if (
 	$mailerSetUp = false;
 }
 
-function sendMail( $to, $subject, $htmlBody ) {
+function sendMail( $to, $subject, $htmlBody, $debug = false ) {
 	$config = getConfig();
 	$mail = new PHPMailer( true );
 	$mail->isSMTP();
+	if ( $debug ) {
+		$mail->SMTPDebug = 2;
+	}
 	$mail->Host       = $config->mailer->host;
 	$mail->SMTPAuth   = true;
 	$mail->Username   = $config->mailer->username;
@@ -50,8 +56,9 @@ function sendMail( $to, $subject, $htmlBody ) {
 	try {
 		$mail->send();
 	} catch (Exception $e) {
-		// echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
-		// @@
+		if ( $debug ) {
+			echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
+		}
 	}
 }
 
@@ -125,7 +132,7 @@ function getFirebaseStatus() {
 // salesforce connectivity statuses and error messages
 $sfConfigInstructions = 'The salesforce connection vlaues must match the values given for the Connected App titled "TAT Mobile App". '
 	. 'This can be found in the <a href="https://success.salesforce.com/answers?id=9063A000000DbnVQAS" target="_blank">App Manager</a>.';
-$sfAuthInstructions = 'The account needs to read and write Contacts, Accounts, Events, and all TAT_App custom objects.'
+$sfAuthInstructions = 'The account needs to read and write a large variety of objects.'
 	. '<br><b>Do NOT authenticate with an admin account.</b>';
 
 $sfStatuses = [
@@ -146,12 +153,12 @@ $sfStatuses = [
 	3 => [
 		'code' => 3,
 		'error' => 'Proxy hasn\'t been authenticated.',
-		'instructions' => 'Please authenticate using a Salesforce account with restricted privileges. ' . $sfAuthInstructions
+		'instructions' => 'Please authenticate using a Salesforce account with edit privileges for all objects. ' . $sfAuthInstructions
 	],
 	4 => [
 		'code' => 4,
 		'error' => 'Authentication is invalid or has expired.',
-		'instructions' => 'Please re-authenticate using a Salesforce account with restricted privileges. ' . $sfAuthInstructions
+		'instructions' => 'Please re-authenticate using a Salesforce account with edit privileges for all objects. ' . $sfAuthInstructions
 	],
 	5 => [
 		'code' => 5,

@@ -124,6 +124,14 @@ input {
     font-size: 14px;
 }
 
+button {
+    border: none;
+    cursor: pointer;
+}
+
+.api-docs {
+    overflow-x: hidden;
+}
 
 .api-docs h2 {
     font-style: italic;
@@ -138,8 +146,13 @@ input {
     padding-left: 1.2em;
 }
 
+.api-docs .section-wrap {
+    margin-bottom: 32px;
+    overflow-x: auto;
+}
 .api-docs section {
     padding: 6px;
+    margin-bottom: 0;
     display: table;
     border-collapse: collapse;
     width: 100%;
@@ -149,7 +162,9 @@ input {
     display: table-row;
     border-bottom: 1px solid #ddd;
 }
-.api-docs section > div:last-child { border-width: 0 }
+.api-docs section > div:last-child {
+    border-width: 0;
+}
 .api-docs section > div > * {
     display: table-cell;
     padding: 12px;
@@ -157,6 +172,7 @@ input {
 .api-docs section > div > *:nth-child(2n) {
     font-size: 90%;
     padding-left: 1em;
+    min-width: 250px;
 }
 .api-docs section > div > *:first-child {
     width: 1px;

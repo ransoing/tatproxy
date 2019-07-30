@@ -96,6 +96,7 @@ require_once( 'functions.php' );
 				<p class="status error">Mailer not configured.</p>
 				<p>Edit <code>config.json</code> on the server to configure the mailer.</p>
 			<?php else: ?>
+				<a href="./util/test-email.php" class="button" style="float:right">Send test email</a>
 				<p class="status ok">Configured.</p>
 			<?php endif; ?>
 		</div>
@@ -149,12 +150,14 @@ require_once( 'functions.php' );
 		<pre>/api/checkRegistrationCode?code=[CODE]</pre>
 
 		<h3>GET parameters</h3>
-		<section>
-			<div>
-				<p><code>code</code> {string} (required)</p>
-				<p>The code (password) required to create a new user account.</p>
-			</div>
-		</section>
+		<div class="section-wrap">
+			<section>
+				<div>
+					<p><code>code</code> {string} (required)</p>
+					<p>The code (password) required to create a new user account.</p>
+				</div>
+			</section>
+		</div>
 
 		<h3>Response payload</h3>
 		<pre>{
@@ -170,12 +173,14 @@ require_once( 'functions.php' );
 }</pre>
 
 		<h3>Error codes <a class="help" href="#error-format">?</a></h3>
-		<section>
-			<div>
-				<p><code>INCORRECT_REGISTRATION_CODE</code></p>
-				<p>The provided registration code was incorrect.</p>
-			</div>
-		</section>
+		<div class="section-wrap">
+			<section>
+				<div>
+					<p><code>INCORRECT_REGISTRATION_CODE</code></p>
+					<p>The provided registration code was incorrect.</p>
+				</div>
+			</section>
+		</div>
 
 		<h3>Example request</h3>
 		<pre>GET /api/checkRegistrationCode?code=correct-horse-battery-staple</pre>
@@ -194,16 +199,18 @@ require_once( 'functions.php' );
 		<pre>/api/contactSearch?email=[EMAIL_ADDRESS]&phone=[PHONE_NUMBER]</pre>
 
 		<h3>GET parameters</h3>
-		<section>
-			<div>
-				<p><code>email</code> {string} (required)</p>
-				<p>An email address. For example, <code>joe.somebody@example.com</code></p>
-			</div>
-			<div>
-				<p><code>phone</code> {string} (required)</p>
-				<p>A phone number in any format. The format doesn't matter. For example, <code>5551234567</code> or <code>(555) 123-4567</code>.</p>
-			</div>
-		</section>
+		<div class="section-wrap">
+			<section>
+				<div>
+					<p><code>email</code> {string} (required)</p>
+					<p>An email address. For example, <code>joe.somebody@example.com</code></p>
+				</div>
+				<div>
+					<p><code>phone</code> {string} (required)</p>
+					<p>A phone number in any format. The format doesn't matter. For example, <code>5551234567</code> or <code>(555) 123-4567</code>.</p>
+				</div>
+			</section>
+		</div>
 
 		<h3>Response payload</h3>
 		<pre>{
@@ -211,16 +218,18 @@ require_once( 'functions.php' );
 }</pre>
 
 		<h3>Error codes <a class="help" href="#error-format">?</a></h3>
-		<section>
-			<div>
-				<p><code>NO_MATCHING_ENTRY</code></p>
-				<p>There is no matching Contact in Salesforce.</p>
-			</div>
-			<div>
-				<p><code>ENTRY_ALREADY_HAS_ACCOUNT</code></p>
-				<p>There is a matching Contact, but it already has an associated Firebase user account.</p>
-			</div>
-		</section>
+		<div class="section-wrap">
+			<section>
+				<div>
+					<p><code>NO_MATCHING_ENTRY</code></p>
+					<p>There is no matching Contact in Salesforce.</p>
+				</div>
+				<div>
+					<p><code>ENTRY_ALREADY_HAS_ACCOUNT</code></p>
+					<p>There is a matching Contact, but it already has an associated Firebase user account.</p>
+				</div>
+			</section>
+		</div>
 
 		<h3>Example request</h3>
 		<pre>GET /api/contactSearch?email=joe.blow@example.com&phone=5559092332</pre>
@@ -237,12 +246,14 @@ require_once( 'functions.php' );
 		<pre>/api/getTeamCoordinators</pre>
 
 		<h3>GET parameters</h3>
-		<section>
-			<div>
-				<p><code>accountId</code> {string} (required)</p>
-				<p>The Salesforce ID of an Account.</p>
-			</div>
-		</section>
+		<div class="section-wrap">
+			<section>
+				<div>
+					<p><code>accountId</code> {string} (required)</p>
+					<p>The Salesforce ID of an Account.</p>
+				</div>
+			</section>
+		</div>
 
 		<h3>Response payload</h3>
 		<pre>[
@@ -269,50 +280,52 @@ require_once( 'functions.php' );
 		<pre>/api/createNewUser</pre>
 
 		<h3>POST request body payload parameters</h3>
-		<section>
-			<div>
-				<p><code>firebaseIdToken</code> {string} (required)</p>
-				<p>
-					<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
-					from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
-					login state, and access various Firebase resources.
-				</p>
-			</div>
-			<div>
-				<p><code>registrationCode</code> {string} (required)</p>
-				<p>A code (password) required to create a new user account. This is <b>not</b> the user's password.</p>
-			</div>
-			<div>
-				<p><code>salesforceId</code> {string}</p>
-				<p>The ID of a Contact object in Salesforce. If provided, the Contact object will be updated with the app user's data.
-					If not provided, a new Contact object will be created.
-				</p>
-			</div>
-			<div>
-				<p><code>email</code> {string}</p>
-				<p>The user's email address. Required if <code>salesforceId</code> is not provided.</p>
-			</div>
-			<div>
-				<p><code>phone</code> {string}</p>
-				<p>The user's phone number. Required if <code>salesforceId</code> is not provided.</p>
-			</div>
-			<div>
-				<p><code>firstName</code> {string}</p>
-				<p>The user's first name. Required if <code>salesforceId</code> is not provided.</p>
-			</div>
-			<div>
-				<p><code>lastName</code> {string}</p>
-				<p>The user's last name. Required if <code>salesforceId</code> is not provided.</p>
-			</div>
-			<div>
-				<p><code>isCoordinator</code> {boolean}</p>
-				<p>Whether the user is a team coordinator. This should also be set to true if the user is an individual distributor volunteer.</p>
-			</div>
-			<div>
-				<p><code>coordinatorId</code> {string}</p>
-				<p>The Salesforce Contact ID of the user's volunteer team coordinator (if the user is not the team coordinator).</p>
-			</div>
-		</section>
+		<div class="section-wrap">
+			<section>
+				<div>
+					<p><code>firebaseIdToken</code> {string} (required)</p>
+					<p>
+						<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
+						from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
+						login state, and access various Firebase resources.
+					</p>
+				</div>
+				<div>
+					<p><code>registrationCode</code> {string} (required)</p>
+					<p>A code (password) required to create a new user account. This is <b>not</b> the user's password.</p>
+				</div>
+				<div>
+					<p><code>salesforceId</code> {string}</p>
+					<p>The ID of a Contact object in Salesforce. If provided, the Contact object will be updated with the app user's data.
+						If not provided, a new Contact object will be created.
+					</p>
+				</div>
+				<div>
+					<p><code>email</code> {string}</p>
+					<p>The user's email address. Required if <code>salesforceId</code> is not provided.</p>
+				</div>
+				<div>
+					<p><code>phone</code> {string}</p>
+					<p>The user's phone number. Required if <code>salesforceId</code> is not provided.</p>
+				</div>
+				<div>
+					<p><code>firstName</code> {string}</p>
+					<p>The user's first name. Required if <code>salesforceId</code> is not provided.</p>
+				</div>
+				<div>
+					<p><code>lastName</code> {string}</p>
+					<p>The user's last name. Required if <code>salesforceId</code> is not provided.</p>
+				</div>
+				<div>
+					<p><code>isCoordinator</code> {boolean}</p>
+					<p>Whether the user is a team coordinator. This should also be set to true if the user is an individual distributor volunteer.</p>
+				</div>
+				<div>
+					<p><code>coordinatorId</code> {string}</p>
+					<p>The Salesforce Contact ID of the user's volunteer team coordinator (if the user is not the team coordinator).</p>
+				</div>
+			</section>
+		</div>
 		
 		<h3>Response payload</h3>
 		<pre>{
@@ -320,16 +333,18 @@ require_once( 'functions.php' );
 }</pre>
 		
 		<h3>Error codes <a class="help" href="#error-format">?</a></h3>
-		<section>
-			<div>
-				<p><code>INCORRECT_REGISTRATION_CODE</code></p>
-				<p>The provided registration code was incorrect.</p>
-			</div>
-			<div>
-				<p><code>FIREBASE_USER_ALREADY_IN_SALESFORCE</code></p>
-				<p>There is already a Contact entry in Salesforce associated with the Firebase user.</code></p>
-			</div>
-		</section>
+		<div class="section-wrap">
+			<section>
+				<div>
+					<p><code>INCORRECT_REGISTRATION_CODE</code></p>
+					<p>The provided registration code was incorrect.</p>
+				</div>
+				<div>
+					<p><code>FIREBASE_USER_ALREADY_IN_SALESFORCE</code></p>
+					<p>There is already a Contact entry in Salesforce associated with the Firebase user.</code></p>
+				</div>
+			</section>
+		</div>
 
 		<h3>Example request</h3>
 		<pre>// URL:
@@ -356,24 +371,26 @@ Content-Type: application/json
 		<pre>/api/updateUser</pre>
 
 		<h3>POST request body payload parameters</h3>
-		<section>
-			<div>
-				<p><code>firebaseIdToken</code> {string} (required)</p>
-				<p>
-					<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
-					from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
-					login state, and access various Firebase resources.
-				</p>
-			</div>
-			<div>
-				<p><code>coordinatorId</code> {string}</p>
-				<p>The Contact ID of the user's team coordinator.</p>
-			</div>
-			<div>
-				<p><code>hasWatchedTrainingVideo</code> {boolean}</p>
-				<p>Whether the user has watched the training video.</p>
-			</div>
-		</section>
+		<div class="section-wrap">
+			<section>
+				<div>
+					<p><code>firebaseIdToken</code> {string} (required)</p>
+					<p>
+						<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
+						from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
+						login state, and access various Firebase resources.
+					</p>
+				</div>
+				<div>
+					<p><code>coordinatorId</code> {string}</p>
+					<p>The Contact ID of the user's team coordinator.</p>
+				</div>
+				<div>
+					<p><code>hasWatchedTrainingVideo</code> {boolean}</p>
+					<p>Whether the user has watched the training video.</p>
+				</div>
+			</section>
+		</div>
 		
 		<h3>Response payload</h3>
 		<pre>{
@@ -406,27 +423,31 @@ Content-Type: application/json
 		<p>See the section on <a href="#required-post-headers">required POST headers</a>.</p>
 
 		<h3>GET parameters</h3>
-		<section>
-			<div>
-				<p><code>parts</code> {string} (required)</p>
-				<p>
-					A comma-separated list of values. These values define what data will be returned.<br>
-					Acceptable values are: <code>basic</code>, <code>unfinishedActivities</code>.
-				</p>
-			</div>
-		</section>
+		<div class="section-wrap">
+			<section>
+				<div>
+					<p><code>parts</code> {string} (required)</p>
+					<p>
+						A comma-separated list of values. These values define what data will be returned.<br>
+						Acceptable values are: <code>basic</code>, <code>unfinishedActivities</code>.
+					</p>
+				</div>
+			</section>
+		</div>
 
 		<h3>POST request body payload parameters</h3>
-		<section>
-			<div>
-				<p><code>firebaseIdToken</code> {string} (required)</p>
-				<p>
-					<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
-					from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
-					login state, and access various Firebase resources.
-				</p>
-			</div>
-		</section>
+		<div class="section-wrap">
+			<section>
+				<div>
+					<p><code>firebaseIdToken</code> {string} (required)</p>
+					<p>
+						<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
+						from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
+						login state, and access various Firebase resources.
+					</p>
+				</div>
+			</section>
+		</div>
 		
 		<h3>Response payload</h3>
 		<p>The API returns a JSON object containing data on the user.</p>
@@ -482,12 +503,14 @@ Content-Type: application/json
 }</pre>
 
 		<h3>Error codes <a class="help" href="#error-format">?</a></h3>
-		<section>
-			<div>
-				<p><code>FIREBASE_USER_NOT_IN_SALESFORCE</code></p>
-				<p>The user defined by the firebaseIdToken does not have an entry in Salesforce.</p>
-			</div>
-		</section>
+		<div class="section-wrap">
+			<section>
+				<div>
+					<p><code>FIREBASE_USER_NOT_IN_SALESFORCE</code></p>
+					<p>The user defined by the firebaseIdToken does not have an entry in Salesforce.</p>
+				</div>
+			</section>
+		</div>
 
 		<h3>Example request</h3>
 		<pre>// URL:
@@ -511,16 +534,18 @@ Content-Type: application/json
 		<pre>/api/getCampaigns</pre>
 
 		<h3>POST request body payload parameters</h3>
-		<section>
-			<div>
-				<p><code>firebaseIdToken</code> {string} (required)</p>
-				<p>
-					<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
-					from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
-					login state, and access various Firebase resources.
-				</p>
-			</div>
-		</section>
+		<div class="section-wrap">
+			<section>
+				<div>
+					<p><code>firebaseIdToken</code> {string} (required)</p>
+					<p>
+						<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
+						from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
+						login state, and access various Firebase resources.
+					</p>
+				</div>
+			</section>
+		</div>
 
 		<h3>Response payload</h3>
 		<pre>[
@@ -554,37 +579,39 @@ Content-Type: application/json
 		<pre>/api/createTestimonial</pre>
 
 		<h3>POST request body payload parameters</h3>
-		<section>
-			<div>
-				<p><code>firebaseIdToken</code> {string} (required)</p>
-				<p>
-					<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
-					from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
-					login state, and access various Firebase resources.
-				</p>
-			</div>
-			<div>
-				<p><code>advice</code> {string}</p>
-				<p>Advice that the user would give other volunteers.</p>
-			</div>
-			<div>
-				<p><code>bestPart</code> {string}</p>
-				<p>The best part of the volunteer's experience.</p>
-			</div>
-			<div>
-				<p><code>improvements</code> {string}</p>
-				<p>Suggestions on how the volunteer experience could be improved.</p>
-			</div>
-			<div>
-				<p><code>givesAnonPermission</code> {boolean} (required)</p>
-				<p>Whether the user gives TAT permission to quote him anonymously.</p>
-			</div>
-			<div>
-				<p><code>givesNamePermission</code> {boolean} (required)</p>
-				<p>Whether the user gives TAT permission to use his name/organization in quotes and on social media.</p>
-			</div>
-		</section>
-		
+		<div class="section-wrap">
+			<section>
+				<div>
+					<p><code>firebaseIdToken</code> {string} (required)</p>
+					<p>
+						<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
+						from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
+						login state, and access various Firebase resources.
+					</p>
+				</div>
+				<div>
+					<p><code>advice</code> {string}</p>
+					<p>Advice that the user would give other volunteers.</p>
+				</div>
+				<div>
+					<p><code>bestPart</code> {string}</p>
+					<p>The best part of the volunteer's experience.</p>
+				</div>
+				<div>
+					<p><code>improvements</code> {string}</p>
+					<p>Suggestions on how the volunteer experience could be improved.</p>
+				</div>
+				<div>
+					<p><code>givesAnonPermission</code> {boolean} (required)</p>
+					<p>Whether the user gives TAT permission to quote him anonymously.</p>
+				</div>
+				<div>
+					<p><code>givesNamePermission</code> {boolean} (required)</p>
+					<p>Whether the user gives TAT permission to use his name/organization in quotes and on social media.</p>
+				</div>
+			</section>
+		</div>
+			
 		<h3>Response payload</h3>
 		<pre>{
     success: true
@@ -615,113 +642,115 @@ Content-Type: application/json
 		<pre>/api/createPreOutreachSurvey</pre>
 
 		<h3>POST request body payload parameters</h3>
-		<section>
-			<div>
-				<p><code>firebaseIdToken</code> {string} (required)</p>
-				<p>
-					<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
-					from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
-					login state, and access various Firebase resources.
-				</p>
-			</div>
-			<div>
-				<p><code>campaignId</code> {string} (required)</p>
-				<p>The salesforce ID of the campaign related to the outreach locations submitted in this survey.</p>
-			</div>
-			<div>
-				<p><code>isReadyToReceive</code> {boolean} (required)</p>
-				<p>Whether the user is ready to receive TAT materials.</p>
-			</div>
-			<div>
-				<p><code>mailingStreet</code> {string}</p>
-				<p>The street address to send TAT materials to.</p>
-			</div>
-			<div>
-				<p><code>mailingCity</code> {string}</p>
-				<p>The city to send TAT materials to.</p>
-			</div>
-			<div>
-				<p><code>mailingState</code> {string}</p>
-				<p>The state to send TAT materials to.</p>
-			</div>
-			<div>
-				<p><code>mailingZip</code> {string}</p>
-				<p>The zip code to send TAT materials to.</p>
-			</div>
-			<div>
-				<p><code>mailingCountry</code> {string}</p>
-				<p>The country to send TAT materials to.</p>
-			</div>
-			<div>
-				<p><code>feelsPrepared</code> {boolean}</p>
-				<p>Whether the user feels prepared to perform outreach duties.</p>
-			</div>
-			<div>
-				<p><code>questions</code> {string}</p>
-				<p>Questions the user may have for TAT staff.</p>
-			</div>
-			<div>
-				<p><code>locations</code> {object[]} (required)</p>
-				<p>An array of locations that the team will perform outreach activities at. This array may not be longer than 200 items.</p>
-			</div>
-			<div>
-				<p><code>locations[].name</code> {string} (required)</p>
-				<p>A friendly name of the location to be visited.</p>
-			</div>
-			<div>
-				<p><code>locations[].type</code> {string} (required)</p>
-				<p>The type of location. Valid values are <code>cdlSchool</code>, <code>truckingCompany</code>, and <code>truckStop</code>.</p>
-			</div>
-			<div>
-				<p><code>locations[].street</code> {string} (required)</p>
-				<p>The street address of the location to be visited.</p>
-			</div>
-			<div>
-				<p><code>locations[].city</code> {string} (required)</p>
-				<p>The city of the location to be visited.</p>
-			</div>
-			<div>
-				<p><code>locations[].state</code> {string} (required)</p>
-				<p>The state of the location to be visited.</p>
-			</div>
-			<div>
-				<p><code>locations[].zip</code> {string} (required)</p>
-				<p>The zip code of the location to be visited.</p>
-			</div>
-			<div>
-				<p><code>locations[].country</code> {string} (required)</p>
-				<p>The country of the location to be visited.</p>
-			</div>
-			<div>
-				<p><code>locations[].date</code> {string, YYYY-MM-DD} (required)</p>
-				<p>The date when the volunteer is planning on visiting the location.</p>
-			</div>
-			<div>
-				<p><code>locations[].hasContactedManager</code> {boolean} (required)</p>
-				<p>Whether the user has contacted the manager (or some other employee) of the location.</p>
-			</div>
-			<div>
-				<p><code>locations[].contactFirstName</code> {string}</p>
-				<p>The first name of the contacted individual.</p>
-			</div>
-			<div>
-				<p><code>locations[].contactLastName</code> {string}</p>
-				<p>The last name of the contacted individual.</p>
-			</div>
-			<div>
-				<p><code>locations[].contactTitle</code> {string}</p>
-				<p>The professional title of the contacted individual.</p>
-			</div>
-			<div>
-				<p><code>locations[].contactEmail</code> {string}</p>
-				<p>The email address of the contacted individual.</p>
-			</div>
-			<div>
-				<p><code>locations[].contactPhone</code> {string}</p>
-				<p>The phone number of the contacted individual.</p>
-			</div>
-			
-		</section>
+		<div class="section-wrap">
+			<section>
+				<div>
+					<p><code>firebaseIdToken</code> {string} (required)</p>
+					<p>
+						<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
+						from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
+						login state, and access various Firebase resources.
+					</p>
+				</div>
+				<div>
+					<p><code>campaignId</code> {string} (required)</p>
+					<p>The salesforce ID of the campaign related to the outreach locations submitted in this survey.</p>
+				</div>
+				<div>
+					<p><code>isReadyToReceive</code> {boolean} (required)</p>
+					<p>Whether the user is ready to receive TAT materials.</p>
+				</div>
+				<div>
+					<p><code>mailingStreet</code> {string}</p>
+					<p>The street address to send TAT materials to.</p>
+				</div>
+				<div>
+					<p><code>mailingCity</code> {string}</p>
+					<p>The city to send TAT materials to.</p>
+				</div>
+				<div>
+					<p><code>mailingState</code> {string}</p>
+					<p>The state to send TAT materials to.</p>
+				</div>
+				<div>
+					<p><code>mailingZip</code> {string}</p>
+					<p>The zip code to send TAT materials to.</p>
+				</div>
+				<div>
+					<p><code>mailingCountry</code> {string}</p>
+					<p>The country to send TAT materials to.</p>
+				</div>
+				<div>
+					<p><code>feelsPrepared</code> {boolean}</p>
+					<p>Whether the user feels prepared to perform outreach duties.</p>
+				</div>
+				<div>
+					<p><code>questions</code> {string}</p>
+					<p>Questions the user may have for TAT staff.</p>
+				</div>
+				<div>
+					<p><code>locations</code> {object[]} (required)</p>
+					<p>An array of locations that the team will perform outreach activities at. This array may not be longer than 200 items.</p>
+				</div>
+				<div>
+					<p><code>locations[].name</code> {string} (required)</p>
+					<p>A friendly name of the location to be visited.</p>
+				</div>
+				<div>
+					<p><code>locations[].type</code> {string} (required)</p>
+					<p>The type of location. Valid values are <code>cdlSchool</code>, <code>truckingCompany</code>, and <code>truckStop</code>.</p>
+				</div>
+				<div>
+					<p><code>locations[].street</code> {string} (required)</p>
+					<p>The street address of the location to be visited.</p>
+				</div>
+				<div>
+					<p><code>locations[].city</code> {string} (required)</p>
+					<p>The city of the location to be visited.</p>
+				</div>
+				<div>
+					<p><code>locations[].state</code> {string} (required)</p>
+					<p>The state of the location to be visited.</p>
+				</div>
+				<div>
+					<p><code>locations[].zip</code> {string} (required)</p>
+					<p>The zip code of the location to be visited.</p>
+				</div>
+				<div>
+					<p><code>locations[].country</code> {string} (required)</p>
+					<p>The country of the location to be visited.</p>
+				</div>
+				<div>
+					<p><code>locations[].date</code> {string, YYYY-MM-DD} (required)</p>
+					<p>The date when the volunteer is planning on visiting the location.</p>
+				</div>
+				<div>
+					<p><code>locations[].hasContactedManager</code> {boolean} (required)</p>
+					<p>Whether the user has contacted the manager (or some other employee) of the location.</p>
+				</div>
+				<div>
+					<p><code>locations[].contactFirstName</code> {string}</p>
+					<p>The first name of the contacted individual.</p>
+				</div>
+				<div>
+					<p><code>locations[].contactLastName</code> {string}</p>
+					<p>The last name of the contacted individual.</p>
+				</div>
+				<div>
+					<p><code>locations[].contactTitle</code> {string}</p>
+					<p>The professional title of the contacted individual.</p>
+				</div>
+				<div>
+					<p><code>locations[].contactEmail</code> {string}</p>
+					<p>The email address of the contacted individual.</p>
+				</div>
+				<div>
+					<p><code>locations[].contactPhone</code> {string}</p>
+					<p>The phone number of the contacted individual.</p>
+				</div>
+				
+			</section>
+		</div>
 		
 		<h3>Response payload</h3>
 		<pre>{
@@ -729,12 +758,14 @@ Content-Type: application/json
 }</pre>
 
 		<h3>Error codes <a class="help" href="#error-format">?</a></h3>
-		<section>
-			<div>
-				<p><code>TOO_MANY_LOCATIONS</code></p>
-				<p>The locations array has more than 200 items.</p>
-			</div>
-		</section>
+		<div class="section-wrap">
+			<section>
+				<div>
+					<p><code>TOO_MANY_LOCATIONS</code></p>
+					<p>The locations array has more than 200 items.</p>
+				</div>
+			</section>
+		</div>
 
 		<h3>Example request</h3>
 		<pre>// URL:
@@ -771,40 +802,42 @@ Content-Type: application/json
 		<pre>/api/createPostOutreachReport</pre>
 
 		<h3>POST request body payload parameters</h3>
-		<section>
-			<div>
-				<p><code>firebaseIdToken</code> {string} (required)</p>
-				<p>
-					<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
-					from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
-					login state, and access various Firebase resources.
-				</p>
-			</div>
-			<div>
-				<p><code>outreachLocationId</code> {string} (required)</p>
-				<p>The ID of an Outreach Location object in Salesforce.</p>
-			</div>
-			<div>
-				<p><code>totalHours</code> {number} (required)</p>
-				<p>The total number of man-hours spent by the volunteer team on this outreach effort.</p>
-			</div>
-			<div>
-				<p><code>completionDate</code> {string, YYYY-MM-DD} (required)</p>
-				<p>The date on which the outreach activity was performed.</p>
-			</div>
-			<div>
-				<p><code>accomplishments</code> {string} (required)</p>
-				<p>A description of the accomplishments made by the volunteer team during their outreach effort.</p>
-			</div>
-			<div>
-				<p><code>willFollowUp</code> {boolean} (required)</p>
-				<p>Whether the volunteer team will follow up with additional outreach.</p>
-			</div>
-			<div>
-				<p><code>followUpDate</code> {string, YYYY-MM-DD}</p>
-				<p>When the additional follow-up will be performed.</p>
-			</div>
-		</section>
+		<div class="section-wrap">
+			<section>
+				<div>
+					<p><code>firebaseIdToken</code> {string} (required)</p>
+					<p>
+						<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
+						from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
+						login state, and access various Firebase resources.
+					</p>
+				</div>
+				<div>
+					<p><code>outreachLocationId</code> {string} (required)</p>
+					<p>The ID of an Outreach Location object in Salesforce.</p>
+				</div>
+				<div>
+					<p><code>totalHours</code> {number} (required)</p>
+					<p>The total number of man-hours spent by the volunteer team on this outreach effort.</p>
+				</div>
+				<div>
+					<p><code>completionDate</code> {string, YYYY-MM-DD} (required)</p>
+					<p>The date on which the outreach activity was performed.</p>
+				</div>
+				<div>
+					<p><code>accomplishments</code> {string} (required)</p>
+					<p>A description of the accomplishments made by the volunteer team during their outreach effort.</p>
+				</div>
+				<div>
+					<p><code>willFollowUp</code> {boolean} (required)</p>
+					<p>Whether the volunteer team will follow up with additional outreach.</p>
+				</div>
+				<div>
+					<p><code>followUpDate</code> {string, YYYY-MM-DD}</p>
+					<p>When the additional follow-up will be performed.</p>
+				</div>
+			</section>
+		</div>
 		
 		<h3>Response payload</h3>
 		<pre>{
@@ -837,20 +870,22 @@ Content-Type: application/json
 		<pre>/api/deleteOutreachLocation</pre>
 
 		<h3>POST request body payload parameters</h3>
-		<section>
-			<div>
-				<p><code>firebaseIdToken</code> {string} (required)</p>
-				<p>
-					<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
-					from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
-					login state, and access various Firebase resources.
-				</p>
-			</div>
-			<div>
-				<p><code>outreachLocationId</code> {string} (required)</p>
-				<p>The ID of an Outreach Location object in Salesforce.</p>
-			</div>
-		</section>
+		<div class="section-wrap">
+			<section>
+				<div>
+					<p><code>firebaseIdToken</code> {string} (required)</p>
+					<p>
+						<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
+						from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
+						login state, and access various Firebase resources.
+					</p>
+				</div>
+				<div>
+					<p><code>outreachLocationId</code> {string} (required)</p>
+					<p>The ID of an Outreach Location object in Salesforce.</p>
+				</div>
+			</section>
+		</div>
 		
 		<h3>Response payload</h3>
 		<pre>{
