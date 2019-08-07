@@ -829,6 +829,26 @@ Content-Type: application/json
 					<p>A description of the accomplishments made by the volunteer team during their outreach effort.</p>
 				</div>
 				<div>
+					<p><code>contactFirstName</code> {string} (required)</p>
+					<p>The first name of the contacted individual.</p>
+				</div>
+				<div>
+					<p><code>contactLastName</code> {string} (required)</p>
+					<p>The last name of the contacted individual.</p>
+				</div>
+				<div>
+					<p><code>contactTitle</code> {string} (required)</p>
+					<p>The professional title of the contacted individual.</p>
+				</div>
+				<div>
+					<p><code>contactEmail</code> {string}</p>
+					<p>The email address of the contacted individual.</p>
+				</div>
+				<div>
+					<p><code>contactPhone</code> {string}</p>
+					<p>The phone number of the contacted individual.</p>
+				</div>
+				<div>
 					<p><code>willFollowUp</code> {boolean} (required)</p>
 					<p>Whether the volunteer team will follow up with additional outreach.</p>
 				</div>
@@ -855,10 +875,14 @@ Content-Type: application/json
 {
     "firebaseIdToken": "abcd1234",
     "outreachLocationId": "IOJEHW8nEhehoh",
-	"totalHours": 14,
-	"completionDate": "2019-03-12",
-	"accomplishments": "Distributed posters; Manager will now train employees",
-	"willFollowUp": false
+    "totalHours": 14,
+    "completionDate": "2019-03-12",
+    "accomplishments": "Distributed posters; Manager will now train employees",
+    "contactFirstName": "Stan",
+    "contactLastName": "Francisco",
+    "contactTitle": "Asst manager",
+    "contactEmail": "stanfran@example.com",
+    "willFollowUp": false
 }</pre>
 
 		<!-- ==================================== -->

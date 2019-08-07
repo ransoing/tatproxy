@@ -44,8 +44,10 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
             array('fields' => implode(',', $fields) )
         );
     })->then( function($outreachLocation) use ($postData) {
+        // not all http calls depend on previous http calls. separate them into various 'threads' that can be performed simultaneously
+
         // get the opportunity related to the Outreach Location's campaign
-        return getAllSalesforceQueryRecordsAsync(
+        $promiseToChangeOpportunity = getAllSalesforceQueryRecordsAsync(
             "SELECT Id FROM Opportunity WHERE CampaignId = '{$outreachLocation->Campaign__c}'"
         )->then( function($records) {
             // change the Opportunity stage to Closed/Won
@@ -58,15 +60,16 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
             } else {
                 return true;
             }
-        })->then( function() use ($outreachLocation) {
-            // search to see if an account for this outreach location already exists
-            return getAllSalesforceQueryRecordsAsync(
-                "SELECT Id FROM Account WHERE Name = '{$outreachLocation->Name}' " .
-                "AND BillingState = '{$outreachLocation->State__c}' " .
-                "AND BillingCity = '{$outreachLocation->City__c}' " .
-                "AND BillingStreet = '{$outreachLocation->Street__c}'"
-            );
-        })->then( function($records) use ($postData, $outreachLocation) {
+        });
+
+        // @@@@@@@@@@@ search for all instances of getAllSalesforceQueryRecordsAsync, and use escapeSingleQuotes for all variables passed to it
+        // search to see if an account for this outreach location already exists
+        $promiseToMakeAccount = getAllSalesforceQueryRecordsAsync(
+            "SELECT Id FROM Account WHERE Name = '" . escapeSingleQuotes($outreachLocation->Name) . "' " .
+            "AND BillingState = '" . escapeSingleQuotes($outreachLocation->State__c) . "' " .
+            "AND BillingCity = '" . escapeSingleQuotes($outreachLocation->City__c) . "' " .
+            "AND BillingStreet = '" . escapeSingleQuotes($outreachLocation->Street__c) . "'"
+        )->then( function($records) use ($postData, $outreachLocation) {
             // ultimately return the ID of an Account; either a new one or one that already exists
 
             if ( sizeof($records) > 0 ) {
@@ -98,31 +101,43 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
             });
 
         })->then( function($accountId) use ($postData, $outreachLocation) {
-            // ultimately return the ID of an account again
+            $promises = array();
+
             if ( !empty($outreachLocation->Contact_First_Name__c) ) {
                 // create a Contact associated with the account
                 $fields = array(
-                    'FirstName' => $outreachLocation->Contact_First_Name__c,
-                    'LastName' => $outreachLocation->Contact_Last_Name__c,
-                    'Title' => $outreachLocation->Contact_Title__c,
+                    'FirstName' => $postData->contactFirstName,
+                    'LastName' => $postData->contactLastName,
+                    'Title' => $postData->contactTitle,
                     'npe01__Preferred_Email__c' =>  'Work',
-                    'npe01__WorkEmail__c' => $outreachLocation->Contact_Email__c,
                     'npe01__PreferredPhone__c' => 'Work',
-                    'npe01__WorkPhone__c' => $outreachLocation->Contact_Phone__c,
+                    'npe01__Primary_Address_Type__c' => 'Work',
+                    'MailingCountry' => $outreachLocation->Country__c,
+                    'MailingStreet' => $outreachLocation->Street__c,
+                    'MailingCity' => $outreachLocation->City__c,
+                    'MailingState' => $outreachLocation->State__c,
+                    'MailingPostalCode' => $outreachLocation->Zip__c,
                     'AccountId' => $accountId
                 );
-                return salesforceAPIPostAsync( 'sobjects/Contact', $fields )->then( function($newContact) use ($accountId) {
+                if ( isset($postData->contactEmail) && !empty($postData->contactEmail) ) {
+                    $fields['npe01__WorkEmail__c'] = $postData->contactEmail;
+                }
+                if ( isset($postData->contactPhone) && !empty($postData->contactPhone) ) {
+                    $fields['npe01__WorkPhone__c'] = $postData->contactPhone;
+                }
+                $promiseToMakeContact = salesforceAPIPostAsync( 'sobjects/Contact', $fields )->then( function($newContact) use ($accountId) {
                     // edit the Account to have the Contact we just created as the primary contact
                     return salesforceAPIPatchAsync( 'sobjects/Account/' . $accountId, array('npe01__One2OneContact__c' => $newContact->id) )->then( function() use ($accountId) {
                         return $accountId;
                     });
                 });
-            } else {
-                return $accountId;
+
+                array_push( $promises, $promiseToMakeContact );
             }
-        })->then( function($accountId) use ($outreachLocation, $postData) {
+
+
             // send an email with results. First, get the person to send an email to --- the owner of the campaign.
-            return getAllSalesforceQueryRecordsAsync(
+            $promiseToSendEmail = getAllSalesforceQueryRecordsAsync(
                 "SELECT Username FROM User WHERE Id IN (SELECT OwnerId FROM Campaign WHERE Campaign.Id = '{$outreachLocation->Campaign__c}')"
             )->then( function($records) use ($postData, $outreachLocation, $accountId) {
                 if ( sizeof($records) === 0 ) {
@@ -136,7 +151,15 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
                 sendMail( $records[0]->Username, 'Post-outreach report completed', $emailContent );
                 return true;
             });
+
+            array_push( $promises, $promiseToSendEmail );
+            return \React\Promise\all( $promises );
         });
+
+        return \React\Promise\all( array(
+            $promiseToChangeOpportunity,
+            $promiseToMakeAccount
+        ));
         // @@TODO create/modify objects in salesforce depending on the specific accomplishments made
     });
 })->then( function() {

@@ -415,3 +415,7 @@ function getLocationType( $key ) {
     );
     return $locationTypes[ $key ];
 }
+
+function escapeSingleQuotes( $str ) {
+    return str_replace( "'", "\'", $str );
+}

@@ -37,39 +37,36 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
             array( 'fields' => 'MailingAddress,FirstName,LastName' )
         );
     })->then( function($contact) use ($contactID, $postData, $firebaseUid) {
-        // ultimately return $contact
+        $promises = array();
 
-        // don't do this part if some mailing info was not provided
-        if ( !isset($postData->mailingZip) || empty($postData->mailingZip) ) {
-            return $contact;
+        // update the contact's address, only if address info was provided
+        if ( isset($postData->mailingZip) && !empty($postData->mailingZip) ) {
+            // always update the TAT_App address fields
+            $addressData = array(
+                'TAT_App_Materials_Country__c' => $postData->mailingCountry,
+                'TAT_App_Materials_Street__c' => $postData->mailingStreet,
+                'TAT_App_Materials_City__c' =>  $postData->mailingCity,
+                'TAT_App_Materials_State__c' => $postData->mailingState,
+                'TAT_App_Materials_Zip__c' =>   $postData->mailingZip
+            );
+
+            // update the Contact's address info in SF if the home address field is empty (consider it empty if the state is not specified)
+            if ( empty($contact->MailingAddress->State) ) {
+                $addressData = array_merge( $addressData, array(
+                    'MailingCountry' => $postData->mailingCountry,
+                    'MailingStreet' => $postData->mailingStreet,
+                    'MailingCity' => $postData->mailingCity,
+                    'MailingState' => $postData->mailingState,
+                    'MailingPostalCode' => $postData->mailingZip
+                ));
+            }
+
+            // make the request to update the Contact
+            $promiseToUpdateContactAddress = salesforceAPIPatchAsync( 'sobjects/Contact/' . $contactID, $addressData );
+            array_push( $promises, $promiseToUpdateContactAddress );
         }
-        
-        // always update the TAT_App address fields
-        $addressData = array(
-            'TAT_App_Materials_Country__c' => $postData->mailingCountry,
-            'TAT_App_Materials_Street__c' => $postData->mailingStreet,
-            'TAT_App_Materials_City__c' =>  $postData->mailingCity,
-            'TAT_App_Materials_State__c' => $postData->mailingState,
-            'TAT_App_Materials_Zip__c' =>   $postData->mailingZip
-        );
 
-        // update the Contact's address info in SF if the home address field is empty (consider it empty if the state is not specified)
-        if ( empty($contact->MailingAddress->State) ) {
-            $addressData = array_merge( $addressData, array(
-                'MailingCountry' => $postData->mailingCountry,
-                'MailingStreet' => $postData->mailingStreet,
-                'MailingCity' => $postData->mailingCity,
-                'MailingState' => $postData->mailingState,
-                'MailingPostalCode' => $postData->mailingZip
-            ));
-        }
 
-        // make the request to update the Contact
-        return salesforceAPIPatchAsync( 'sobjects/Contact/' . $contactID, $addressData )->then( function() use ($contact) {
-            return $contact;
-        });
-
-    })->then( function($contact) use ($postData, $contactID, $firebaseUid) {
         // create one TAT_App_Outreach_Location per object in $postData->locations
         $outreachLocations = array();
         $locationNamesOnly = array();
@@ -98,7 +95,7 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
         }
 
         // create outreach locations
-        return salesforceAPIPostAsync( 'composite/sobjects/', array(
+        $promiseToCreateLocations = salesforceAPIPostAsync( 'composite/sobjects/', array(
             'allOrNone' => true,
             'records' => $outreachLocations
         ))->then( function($responses) use ($firebaseUid, $postData, $locationNamesOnly, $contact, $contactID) {
@@ -117,6 +114,8 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
             $now = date('c');
             $eventData = array(
                 'Subject' =>  'TAT App Pre-Outreach Survey Response',
+                'Status' => 'Completed',
+                'ActivityDate' => $now,
                 'Description' => formatQAs(
                     array(' Volunteer:', "{$contact->FirstName} {$contact->LastName}\n{$instanceUrl}/lightning/r/Contact/{$contactID}/view" ),
                     array( 'Are you ready to receive TAT materials?', $postData->isReadyToReceive ? 'Yes' : 'No' ),
@@ -125,12 +124,10 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
                     array( 'What questions do you have for TAT staff?', $postData->questions ),
                     array( 'Outreach locations:', implode( "\n", $locationNamesOnly) ),
                     array( 'Links to outreach locations in Salesforce:', implode( "\n", $urls) )
-                ),
-                'StartDateTime' =>  $now,
-                'EndDateTime' =>    $now
+                )
             );
 
-            return createNewSFObject( $firebaseUid, 'sobjects/Event/', $eventData, 'WhoId')->then( function() use ($postData) {
+            return createNewSFObject( $firebaseUid, 'sobjects/Task/', $eventData, 'WhoId')->then( function() use ($postData) {
                 // Send an email to the campaign owner. First get the owner of the campaign
                 return getAllSalesforceQueryRecordsAsync( "SELECT Username FROM User WHERE Id IN (SELECT OwnerId FROM Campaign WHERE Campaign.Id = '{$postData->campaignId}')" );
             })->then( function($records) use ($eventData) {
@@ -143,39 +140,47 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
                 return true;
             });
         });
-    })->then( function() use ($contactID, $postData) {
+
+        array_push( $promises, $promiseToCreateLocations );
+        
         // Add all team members to the campaign. First get all contacts who have this user as their team lead
-        return getAllSalesforceQueryRecordsAsync( "SELECT Id FROM Contact WHERE TAT_App_Team_Coordinator__c = '{$contactID}'" );
-    })->then( function($records) use ($postData) {
-        // create a CampaignMember linking each contact to the campaign
-        if ( sizeof($records) > 0 ) {
-            $campaignMembers = array();
-            foreach( $records as $record ) {
-                array_push( $campaignMembers, array(
-                    'attributes' => array( 'type' => 'CampaignMember' ),
-                    'CampaignId' => $postData->campaignId,
-                    'ContactId' => $record->Id
+        $promiseToAddToCampaign = getAllSalesforceQueryRecordsAsync( "SELECT Id FROM Contact WHERE TAT_App_Team_Coordinator__c = '{$contactID}'" )->then( function($records) use ($postData) {
+            // create a CampaignMember linking each contact to the campaign
+            if ( sizeof($records) > 0 ) {
+                $campaignMembers = array();
+                foreach( $records as $record ) {
+                    array_push( $campaignMembers, array(
+                        'attributes' => array( 'type' => 'CampaignMember' ),
+                        'CampaignId' => $postData->campaignId,
+                        'ContactId' => $record->Id
+                    ));
+                }
+                // send it
+                return salesforceAPIPostAsync( 'composite/sobjects/', array(
+                    'allOrNone' => false,
+                    'records' => $campaignMembers
                 ));
+            } else {
+                return true;
             }
-            // send it
-            return salesforceAPIPostAsync( 'composite/sobjects/', array(
-                'allOrNone' => false,
-                'records' => $campaignMembers
-            ));
-        } else {
-            return true;
-        }
-    })->then( function() use ($postData) {
+        });
+
+        array_push( $promises, $promiseToAddToCampaign );
+
         // get the related opportunity
-        return getAllSalesforceQueryRecordsAsync( "SELECT Id from Opportunity WHERE CampaignId = '{$postData->campaignId}'" );
-    })->then( function($records) use ($postData) {
-        // for the related Opportunity, change the stage to "pledged"
-        if ( sizeof($records) > 0 ) {
-            $patchData = array( 'StageName' => 'Pledged' );
-            return salesforceAPIPatchAsync( 'sobjects/Opportunity/' . $records[0]->Id, $patchData );
-        } else {
-            return true;
-        }
+        $promiseToChangeOpportunity = getAllSalesforceQueryRecordsAsync( "SELECT Id from Opportunity WHERE CampaignId = '{$postData->campaignId}'" )->then( function($records) use ($postData) {
+            // for the related Opportunity, change the stage to "pledged"
+            if ( sizeof($records) > 0 ) {
+                $patchData = array( 'StageName' => 'Pledged' );
+                return salesforceAPIPatchAsync( 'sobjects/Opportunity/' . $records[0]->Id, $patchData );
+            } else {
+                return true;
+            }
+        });
+
+        array_push( $promises, $promiseToChangeOpportunity );
+
+        return \React\Promise\all( $promises );
     });
 })->then( function() {
     echo '{"success": true}';
