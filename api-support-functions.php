@@ -270,6 +270,7 @@ function salesforceAPIDeleteAsync( $urlSegment, $data = array() ) {
 
 // performs a SOQL query and returns all records. This may take several requests to the API.
 // i.e. getAllSalesforceQueryRecordsAsync( "SELECT Name from Contact WHERE Name LIKE 'S%' OR Name LIKE 'A%' OR Name LIKE 'R%'" )
+// remember to properly escape quotes in user-generated variables when building your query
 function getAllSalesforceQueryRecordsAsync( $query ) {
     return salesforceAPIGetAsync( 'query/', array('q' => $query) )->then(
         function( $response ) {

@@ -18,7 +18,8 @@ if ( !isset($_GET['code']) ) {
 // check the submitted code against registration codes saved in sf
 $code = $_GET['code'];
 makeSalesforceRequestWithTokenExpirationCheck( function() use ($code) {
-    return getAllSalesforceQueryRecordsAsync( "SELECT Id from Account WHERE TAT_App_Registration_Code__c = '{$code}'" );
+    $escapedCode = escapeSingleQuotes( $code );
+    return getAllSalesforceQueryRecordsAsync( "SELECT Id from Account WHERE TAT_App_Registration_Code__c = '{$escapedCode}'" );
 })->then( function($records) {
     if ( sizeof($records) === 0 ) {
         $message = json_encode(array(

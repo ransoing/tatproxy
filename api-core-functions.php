@@ -24,7 +24,7 @@ $apiFunctions['contactSearch'] = function( $email, $phone ) {
     // match any one of several email fields
     $emailFields = array( 'npe01__HomeEmail__c', 'npe01__WorkEmail__c', 'npe01__AlternateEmail__c' );
     foreach( $emailFields as $i => $emailField ) {
-        $emailFields[$i] = "${emailField}='${email}'";
+        $emailFields[$i] = sprintf( "%s='%s'", $emailField, escapeSingleQuotes($email) );
     }
     $query .= implode( ' OR ', $emailFields );
 
@@ -36,6 +36,8 @@ $apiFunctions['contactSearch'] = function( $email, $phone ) {
     // salesforce phone fields might have parentheses, dashes, or dots. We need to use wildcards to account for any of these cases.
     // i.e. for the phone number 123-456-7890, search for '%123%456%7890'. This will match '1234567890' and '(123) 456-7890' and '123.456.7890'
     if ( strlen($phone) === 10 ) {
+        // take the single quotes out of the phone number
+        $phone = str_replace( "'", "", $phone );
         $phoneWithWildcards = '%' . substr($phone, 0, 3) . '%' . substr($phone, 3, 3) . '%' . substr($phone, 6, 4);
     } else {
         // unknown / bad format

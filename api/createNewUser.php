@@ -36,7 +36,8 @@ if ( empty($postData->salesforceId) ) {
 $code = $postData->registrationCode;
 makeSalesforceRequestWithTokenExpirationCheck( function() use ($code) {
     // verify the registration code
-    return getAllSalesforceQueryRecordsAsync( "SELECT Id from Account WHERE TAT_App_Registration_Code__c = '{$code}'" );
+    $escapedCode = escapeSingleQuotes( $code );
+    return getAllSalesforceQueryRecordsAsync( "SELECT Id from Account WHERE TAT_App_Registration_Code__c = '{$escapedCode}'" );
 })->then( function($records) use ($sfData, $postData, $firebaseUid) {
     if ( sizeof($records) === 0 ) {
         $message = json_encode(array(

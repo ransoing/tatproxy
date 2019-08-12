@@ -62,14 +62,14 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
             }
         });
 
-        // @@@@@@@@@@@ search for all instances of getAllSalesforceQueryRecordsAsync, and use escapeSingleQuotes for all variables passed to it
         // search to see if an account for this outreach location already exists
-        $promiseToMakeAccount = getAllSalesforceQueryRecordsAsync(
-            "SELECT Id FROM Account WHERE Name = '" . escapeSingleQuotes($outreachLocation->Name) . "' " .
-            "AND BillingState = '" . escapeSingleQuotes($outreachLocation->State__c) . "' " .
-            "AND BillingCity = '" . escapeSingleQuotes($outreachLocation->City__c) . "' " .
-            "AND BillingStreet = '" . escapeSingleQuotes($outreachLocation->Street__c) . "'"
-        )->then( function($records) use ($postData, $outreachLocation) {
+        $promiseToMakeAccount = getAllSalesforceQueryRecordsAsync( sprintf(
+            "SELECT Id FROM Account WHERE Name = '%s' AND BillingState = '%s' AND BillingCity = '%s' AND BillingStreet = '%s'",
+            escapeSingleQuotes($outreachLocation->Name),
+            escapeSingleQuotes($outreachLocation->State__c),
+            escapeSingleQuotes($outreachLocation->City__c),
+            escapeSingleQuotes($outreachLocation->Street__c)
+        ))->then( function($records) use ($postData, $outreachLocation) {
             // ultimately return the ID of an Account; either a new one or one that already exists
 
             if ( sizeof($records) > 0 ) {
@@ -103,7 +103,7 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
         })->then( function($accountId) use ($postData, $outreachLocation) {
             $promises = array();
 
-            if ( !empty($outreachLocation->Contact_First_Name__c) ) {
+            if ( !empty($postData->contactFirstName) ) {
                 // create a Contact associated with the account
                 $fields = array(
                     'FirstName' => $postData->contactFirstName,
@@ -125,34 +125,34 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
                 if ( isset($postData->contactPhone) && !empty($postData->contactPhone) ) {
                     $fields['npe01__WorkPhone__c'] = $postData->contactPhone;
                 }
+
                 $promiseToMakeContact = salesforceAPIPostAsync( 'sobjects/Contact', $fields )->then( function($newContact) use ($accountId) {
                     // edit the Account to have the Contact we just created as the primary contact
-                    return salesforceAPIPatchAsync( 'sobjects/Account/' . $accountId, array('npe01__One2OneContact__c' => $newContact->id) )->then( function() use ($accountId) {
-                        return $accountId;
-                    });
+                    return salesforceAPIPatchAsync( 'sobjects/Account/' . $accountId, array('npe01__One2OneContact__c' => $newContact->id) );
                 });
 
                 array_push( $promises, $promiseToMakeContact );
             }
 
-
             // send an email with results. First, get the person to send an email to --- the owner of the campaign.
             $promiseToSendEmail = getAllSalesforceQueryRecordsAsync(
                 "SELECT Username FROM User WHERE Id IN (SELECT OwnerId FROM Campaign WHERE Campaign.Id = '{$outreachLocation->Campaign__c}')"
-            )->then( function($records) use ($postData, $outreachLocation, $accountId) {
+            )->then( function($records) use ($outreachLocation, $accountId) {
                 if ( sizeof($records) === 0 ) {
                     // nobody to email :(
                     return true;
                 }
                 $instanceUrl = getSFAuth()->instance_url;
-                $emailContent = "<p>See the details <a href='{$instanceUrl}/lightning/r/TAT_App_Outreach_Location__c/{$outreachLocation->Id}/view'>in Salesforce</a>.</p>"
-                    . "<p>Related Account: <a href='{$instanceUrl}/lightning/r/Account/{$accountId}/view'>see details in Salesforce</a>.<p>";
+                $emailContent = "<p>Outreach completed at {$outreachLocation->Name}.</p>"
+                    . "<p>See the full details on the <a href='{$instanceUrl}/lightning/r/TAT_App_Outreach_Location__c/{$outreachLocation->Id}/view'>Outreach Location in Salesforce</a>.</p>"
+                    . "<p>See the <a href='{$instanceUrl}/lightning/r/Account/{$accountId}/view'>Account for this location</a>.<p>";
                 // the email address is the 'Username' field of the User object
                 sendMail( $records[0]->Username, 'Post-outreach report completed', $emailContent );
                 return true;
             });
 
             array_push( $promises, $promiseToSendEmail );
+
             return \React\Promise\all( $promises );
         });
 
