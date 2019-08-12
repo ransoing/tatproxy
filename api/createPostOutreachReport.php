@@ -20,7 +20,7 @@ $postData->outreachLocationId = str_replace( array("'", '"'), "", $postData->out
 getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postData) {
 
     $miscAnswers = formatQAs(
-        array( 'What were you able to accomplish?', $postData->accomplishments ),
+        array( 'What were you able to accomplish?', $postData->accomplishments ), // @@@ turn keywords into full sentences. Also include otherAccomplishments
         array( 'Do you plan to follow up with your contact?', $postData->willFollowUp ),
         array( 'When will you follow up?', $postData->followUpDate )
     );
