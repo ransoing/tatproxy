@@ -825,8 +825,14 @@ Content-Type: application/json
 					<p>The date on which the outreach activity was performed.</p>
 				</div>
 				<div>
-					<p><code>accomplishments</code> {string} (required)</p>
-					<p>A description of the accomplishments made by the volunteer team during their outreach effort.</p>
+					<p><code>accomplishments</code> {string[]} (required)</p>
+					<p>
+						An array containing descriptions of the accomplishments made by the volunteer team during their outreach effort.<br>
+						For a location type of <code>truckStop</code>, the values should include zero or more of: <code>'willDistributeMaterials', 'willTrainEmployees'</code><br>
+						For a location type of <code>cdlSchool</code>, the values should include zero or more of: <code>'willUseTatTraining', 'willPassOnInfo'</code><br>
+						For a location type of <code>truckingCompany</code>, the values should include zero or more of: <code>'willTrainDrivers'</code><br>
+						Any location type may also contain custom items for this field (representing the "other accomplishments" input box).
+					</p>
 				</div>
 				<div>
 					<p><code>contactFirstName</code> {string} (required)</p>
@@ -877,7 +883,7 @@ Content-Type: application/json
     "outreachLocationId": "IOJEHW8nEhehoh",
     "totalHours": 14,
     "completionDate": "2019-03-12",
-    "accomplishments": "Distributed posters; Manager will now train employees",
+    "accomplishments": ["willUseTatTraining", "willPassOnInfo", "Distributed posters"],
     "contactFirstName": "Stan",
     "contactLastName": "Francisco",
     "contactTitle": "Asst manager",
