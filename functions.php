@@ -8,8 +8,8 @@ use PHPMailer\PHPMailer\Exception;
 
 require_once( __DIR__ . '/vendor/autoload.php' );
 
-// @@ $salesforceOAuthBase = 'https://login.salesforce.com/services/oauth2';
-$salesforceOAuthBase = 'https://test.salesforce.com/services/oauth2';
+$salesforceOAuthBase = 'https://login.salesforce.com/services/oauth2';
+// $salesforceOAuthBase = 'https://test.salesforce.com/services/oauth2';
 
 $loop = \React\EventLoop\Factory::create();
 $browser = new \Clue\React\Buzz\Browser( $loop );

@@ -420,3 +420,12 @@ function getLocationType( $key ) {
 function escapeSingleQuotes( $str ) {
     return str_replace( "'", "\'", $str );
 }
+
+// gets the value of an object's property, and optionally returns a default value if the property isn't set
+function getProperty( $object, $propertyName, $default = null ) {
+	if ( isset($object->$propertyName) ) {
+		return $object->$propertyName;
+	} else {
+	    return $default;
+	}
+}

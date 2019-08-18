@@ -829,7 +829,7 @@ Content-Type: application/json
 					<p>
 						An array containing descriptions of the accomplishments made by the volunteer team during their outreach effort.<br>
 						For a location type of <code>truckStop</code>, the values should include zero or more of: <code>'willDistributeMaterials', 'willTrainEmployees'</code><br>
-						For a location type of <code>cdlSchool</code>, the values should include zero or more of: <code>'willUseTatTraining', 'willPassOnInfo'</code><br>
+						For a location type of <code>cdlSchool</code>, the values should include zero or more of: <code>'willUseTatTraining'</code><br>
 						For a location type of <code>truckingCompany</code>, the values should include zero or more of: <code>'willTrainDrivers'</code>
 					</p>
 				</div>
@@ -886,7 +886,7 @@ Content-Type: application/json
     "outreachLocationId": "IOJEHW8nEhehoh",
     "totalHours": 14,
     "completionDate": "2019-03-12",
-    "accomplishments": ["willUseTatTraining", "willPassOnInfo"],
+    "accomplishments": ["willUseTatTraining"],
 	"otherAccomplishments": ["Distributed some posters"],
     "contactFirstName": "Stan",
     "contactLastName": "Francisco",
