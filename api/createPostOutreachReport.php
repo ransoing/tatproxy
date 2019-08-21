@@ -49,7 +49,7 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
         return promiseToGetCampaignOwner( $outreachLocation->Campaign__c )->then( function($campaignOwner) use ($outreachLocation, $postData) {
             // not all http calls depend on previous http calls. separate them into various 'threads' that can be performed simultaneously
             return \React\Promise\all( array(
-                promiseToChangeCampaignOpportunity( $outreachLocation->Campaign__c ),
+                promiseToChangeCampaignOpportunity( $outreachLocation->Campaign__c, floatval($postData->totalHours) ),
                 promiseToMakeAccountAndContact( $postData, $outreachLocation, $campaignOwner->Id ),
             ))->then( function($promiseResults) use ($outreachLocation, $postData, $campaignOwner) {
 
@@ -82,17 +82,19 @@ $loop->run();
 /**
  * Finds an opportunity related to a campaign, and changes its stage to "Closed/Won".
  * @param $campaignId {string} - salesforce Campaign object ID
+ * @param $numVolunteerHours {number} - the number of hours spent on the outreach represented by this post outreach report
  * @return - a Promise which resolves with `true`
  */
-function promiseToChangeCampaignOpportunity( $campaignId ) {
+function promiseToChangeCampaignOpportunity( $campaignId, $numVolunteerHours ) {
     return getAllSalesforceQueryRecordsAsync(
-        "SELECT Id FROM Opportunity WHERE CampaignId = '{$campaignId}'"
-    )->then( function($records) {
-        // change the Opportunity stage to Closed/Won
+        "SELECT Id, Hours_volunteered__c FROM Opportunity WHERE Volunteer_Event_Campaign__c = '{$campaignId}'"
+    )->then( function($records) use ($numVolunteerHours) {
+        // change the Opportunity stage to Closed/Won, and add to the number of volunteer hours
         if ( sizeof($records) > 0 ) {
+            $currentHours = floatval( $records[0]->Hours_volunteered__c );
             $patchData = array(
                 'StageName' => 'Closed/Won',
-                'CloseDate' => explode( 'T', date('c') )[0] // today, YYYY-MM-DD
+                'Hours_volunteered__c' => $currentHours + $numVolunteerHours
             );
             return salesforceAPIPatchAsync( 'sobjects/Opportunity/' . $records[0]->Id, $patchData );
         } else {
@@ -229,8 +231,7 @@ function promiseToCreateOpportunities( $accountId, $contactId, $accomplishments,
     $oppRecordTypes = (object)array(
         'distributionPoint' => '012o0000000o2YcAAI',
         'registeredTatTrained' => '012o0000000o2WMAAY',
-        'otherInvolvement' => '012o0000000o2WWAAY',
-        'volunteer' => '0121N000001M7x7QAC'
+        'otherInvolvement' => '012o0000000o2WWAAY'
     );
 
     // create an array with fields and values that are common to all types of opportunities.
@@ -287,13 +288,6 @@ function promiseToCreateOpportunities( $accountId, $contactId, $accomplishments,
         )));
     }
 
-    //@@
-    // add an opportunity to track volunteer hours
-    array_push( $newOpps, array_merge($defaultOpp, array(
-        'RecordTypeId' => $oppRecordTypes->volunteer,
-        'Name' => // @@ use the name of the organization running the outreach campaign -- how do I find this? through the campaign? or just the volunteer's Account name?
-    )));
-    // @@
 
     if ( sizeof($newOpps) > 0 ) {
         return salesforceAPIPostAsync( 'composite/sobjects/', array(
