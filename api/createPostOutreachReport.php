@@ -46,27 +46,27 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
         );
     })->then( function($outreachLocation) use ($postData) {
 
-        // not all http calls depend on previous http calls. separate them into various 'threads' that can be performed simultaneously
-        return \React\Promise\all( array(
-            promiseToChangeCampaignOpportunity( $outreachLocation->Campaign__c ),
-            promiseToMakeAccountAndContact( $postData, $outreachLocation ),
-            promiseToGetCampaignOwner( $outreachLocation->Campaign__c )
-        ))->then( function($promiseResults) use ($outreachLocation, $postData) {
+        return promiseToGetCampaignOwner( $outreachLocation->Campaign__c )->then( function($campaignOwner) use ($outreachLocation, $postData) {
+            // not all http calls depend on previous http calls. separate them into various 'threads' that can be performed simultaneously
+            return \React\Promise\all( array(
+                promiseToChangeCampaignOpportunity( $outreachLocation->Campaign__c ),
+                promiseToMakeAccountAndContact( $postData, $outreachLocation, $campaignOwner->Id ),
+            ))->then( function($promiseResults) use ($outreachLocation, $postData, $campaignOwner) {
 
-            $accountId = $promiseResults[1]->accountId;
-            $contactId = $promiseResults[1]->contactId;
-            $campaignOwner = $promiseResults[2];
+                $accountId = $promiseResults[1]->accountId;
+                $contactId = $promiseResults[1]->contactId;
 
-            // create new opportunities in salesforce depending on the specific accomplishments made. This must be done after the
-            // new Contact has been created, because the opportunities need to point to this Contact
-            $otherAccomplishments = getProperty( $postData, 'otherAccomplishments', '' );
-            return promiseToCreateOpportunities(
-                $accountId, $contactId, $postData->accomplishments, $campaignOwner->Id, $outreachLocation, $otherAccomplishments
-            )->then( function($opportunities) use ($outreachLocation, $accountId, $contactId, $campaignOwner, $postData) {
+                // create new opportunities in salesforce depending on the specific accomplishments made. This must be done after the
+                // new Contact has been created, because the opportunities need to point to this Contact
+                $otherAccomplishments = getProperty( $postData, 'otherAccomplishments', '' );
+                return promiseToCreateOpportunities(
+                    $accountId, $contactId, $postData->accomplishments, $campaignOwner->Id, $outreachLocation, $otherAccomplishments
+                )->then( function($opportunities) use ($outreachLocation, $accountId, $contactId, $campaignOwner, $postData) {
 
-                // the email address is the 'Username' field of the campaign owner User object
-                sendResultsEmail( $campaignOwner->Username, $accountId, $contactId, $opportunities, $outreachLocation, $postData );
-                return true;
+                    // the email address is the 'Username' field of the campaign owner User object
+                    sendResultsEmail( $campaignOwner->Username, $accountId, $contactId, $opportunities, $outreachLocation, $postData );
+                    return true;
+                });
             });
         });
     });
@@ -107,9 +107,10 @@ function promiseToChangeCampaignOpportunity( $campaignId ) {
  * Also creates a new Contact based on POST fields.
  * @param $postData {object}
  * @param $outreachLocation {object} - an instance of the TAT_App_Outreach_Location__c object in salesforce
+ * @param $campaignOnwerId {string} - a string representing the ID of the User in salesforce who should own the new Account and Contact
  * @return - a Promise which resolves with an object that has `accountId` and `contactId` properties
  */
-function promiseToMakeAccountAndContact( $postData, $outreachLocation ) {
+function promiseToMakeAccountAndContact( $postData, $outreachLocation, $campaignOwnerId ) {
     // search to see if this account already exists.
     return getAllSalesforceQueryRecordsAsync( sprintf(
         "SELECT Id FROM Account WHERE Name = '%s' AND BillingState = '%s' AND BillingCity = '%s' AND BillingStreet = '%s'",
@@ -117,7 +118,7 @@ function promiseToMakeAccountAndContact( $postData, $outreachLocation ) {
         escapeSingleQuotes($outreachLocation->State__c),
         escapeSingleQuotes($outreachLocation->City__c),
         escapeSingleQuotes($outreachLocation->Street__c)
-    ))->then( function($records) use ($postData, $outreachLocation) {
+    ))->then( function($records) use ($postData, $outreachLocation, $campaignOnwerId) {
         // ultimately return the ID of an Account; either a new one or one that already exists
 
         if ( sizeof($records) > 0 ) {
@@ -136,7 +137,7 @@ function promiseToMakeAccountAndContact( $postData, $outreachLocation ) {
 
         $fields = array(
             'Name' => $outreachLocation->Name,
-            // @@ 'OwnerId' => 
+            'OwnerId' => $campaignOwnerId,
             'Type' => $typeMapping[ $outreachLocation->Type__c ],
             'BillingCountry' => $outreachLocation->Country__c,
             'BillingStreet' => $outreachLocation->Street__c,
@@ -148,7 +149,7 @@ function promiseToMakeAccountAndContact( $postData, $outreachLocation ) {
             return $newAccount->id;
         });
 
-    })->then( function($accountId) use ($postData, $outreachLocation) {
+    })->then( function($accountId) use ($postData, $outreachLocation, $campaignOwnerId) {
 
         // create a Contact associated with the account. This must happen after the account is created, because we need to insert
         // the right AccountId when this contact is created, not after
@@ -164,7 +165,8 @@ function promiseToMakeAccountAndContact( $postData, $outreachLocation ) {
             'MailingCity' => $outreachLocation->City__c,
             'MailingState' => $outreachLocation->State__c,
             'MailingPostalCode' => $outreachLocation->Zip__c,
-            'AccountId' => $accountId
+            'AccountId' => $accountId,
+            'OwnerId' => $campaignOwnerId
         );
         if ( isset($postData->contactEmail) && !empty($postData->contactEmail) ) {
             $fields['npe01__WorkEmail__c'] = $postData->contactEmail;
@@ -227,7 +229,8 @@ function promiseToCreateOpportunities( $accountId, $contactId, $accomplishments,
     $oppRecordTypes = (object)array(
         'distributionPoint' => '012o0000000o2YcAAI',
         'registeredTatTrained' => '012o0000000o2WMAAY',
-        'otherInvolvement' => '012o0000000o2WWAAY'
+        'otherInvolvement' => '012o0000000o2WWAAY',
+        'volunteer' => '0121N000001M7x7QAC'
     );
 
     // create an array with fields and values that are common to all types of opportunities.
@@ -283,6 +286,14 @@ function promiseToCreateOpportunities( $accountId, $contactId, $accomplishments,
             'Probability' => 0
         )));
     }
+
+    //@@
+    // add an opportunity to track volunteer hours
+    array_push( $newOpps, array_merge($defaultOpp, array(
+        'RecordTypeId' => $oppRecordTypes->volunteer,
+        'Name' => // @@ use the name of the organization running the outreach campaign -- how do I find this? through the campaign? or just the volunteer's Account name?
+    )));
+    // @@
 
     if ( sizeof($newOpps) > 0 ) {
         return salesforceAPIPostAsync( 'composite/sobjects/', array(

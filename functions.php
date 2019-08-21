@@ -8,7 +8,7 @@ use PHPMailer\PHPMailer\Exception;
 
 require_once( __DIR__ . '/vendor/autoload.php' );
 
-$salesforceOAuthBase = 'https://login.salesforce.com/services/oauth2';
+$salesforceOAuthBase = 'https://login.salesforce.com/services/oauth2';// @@
 // $salesforceOAuthBase = 'https://test.salesforce.com/services/oauth2';
 
 $loop = \React\EventLoop\Factory::create();
@@ -157,7 +157,7 @@ $sfStatuses = [
 	],
 	4 => [
 		'code' => 4,
-		'error' => 'Authentication is invalid or has expired.',
+		'error' => 'Authentication is invalid or has expired.', // @@ send an email to someone to tell them to authenticate the proxy right now
 		'instructions' => 'Please re-authenticate using a Salesforce account with edit privileges for all objects. ' . $sfAuthInstructions
 	],
 	5 => [
