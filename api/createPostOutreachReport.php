@@ -37,21 +37,27 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
     return makeSalesforceRequestWithTokenExpirationCheck( function() use ($sfData, $postData, $contactID) {
         // modify the outreach location
         return salesforceAPIPatchAsync( 'sobjects/TAT_App_Outreach_Location__c/' . $postData->outreachLocationId, $sfData );
-    })->then( function() use ($postData) {
-        // get outreach location info
-        $fields = array( 'Id', 'Name', 'Contact_Email__c', 'Contact_First_Name__c', 'Contact_Last_Name__c', 'Contact_Phone__c', 'Contact_Title__c', 'Country__c', 'State__c', 'City__c', 'Street__c', 'Zip__c', 'Type__c', 'Campaign__c' );
-        return salesforceAPIGetAsync(
-            'sobjects/TAT_App_Outreach_Location__c/' . $postData->outreachLocationId,
-            array('fields' => implode(',', $fields) )
-        );
-    })->then( function($outreachLocation) use ($postData) {
+    })->then( function() use ($postData, $contactID) {
+        // get outreach location info and volunteer Contact info
+        $locationFields = array( 'Id', 'Name', 'Contact_Email__c', 'Contact_First_Name__c', 'Contact_Last_Name__c', 'Contact_Phone__c', 'Contact_Title__c', 'Country__c', 'State__c', 'City__c', 'Street__c', 'Zip__c', 'Type__c', 'Campaign__c' );
+        $locationFieldsString = implode( ',', $locationFields );
+        $contactFields = array( 'FirstName', 'LastName' );
+        $contactFieldsString = implode( ',', $contactFieldsString );
+        return \React\Promise\all( array(
+            salesforceAPIGetAsync( 'sobjects/TAT_App_Outreach_Location__c/' . $postData->outreachLocationId, array('fields' => $locationFieldsString) ),
+            salesforceAPIGetAsync( 'sobjects/Contact/' . $contactID, array('fields' => $contactFieldsString) )
+        ));
+    })->then( function($responses) use ($postData) {
+        $outreachLocation = $responses[0];
+        $volunteerContact = $responses[1];
+        $volunteerName = $volunteerContact->FirstName . ' ' . $volunteerContact->LastName;
 
-        return promiseToGetCampaignOwner( $outreachLocation->Campaign__c )->then( function($campaignOwner) use ($outreachLocation, $postData) {
+        return promiseToGetCampaignOwner( $outreachLocation->Campaign__c )->then( function($campaignOwner) use ($outreachLocation, $postData, $volunteerName) {
             // not all http calls depend on previous http calls. separate them into various 'threads' that can be performed simultaneously
             return \React\Promise\all( array(
                 promiseToChangeCampaignOpportunity( $outreachLocation->Campaign__c, floatval($postData->totalHours) ),
                 promiseToMakeAccountAndContact( $postData, $outreachLocation, $campaignOwner->Id ),
-            ))->then( function($promiseResults) use ($outreachLocation, $postData, $campaignOwner) {
+            ))->then( function($promiseResults) use ($outreachLocation, $postData, $campaignOwner, $volunteerName) {
 
                 $accountId = $promiseResults[1]->accountId;
                 $contactId = $promiseResults[1]->contactId;
@@ -60,7 +66,7 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
                 // new Contact has been created, because the opportunities need to point to this Contact
                 $otherAccomplishments = getProperty( $postData, 'otherAccomplishments', '' );
                 return promiseToCreateOpportunities(
-                    $accountId, $contactId, $postData->accomplishments, $campaignOwner->Id, $outreachLocation, $otherAccomplishments
+                    $accountId, $contactId, $volunteerName, $postData->accomplishments, $campaignOwner->Id, $outreachLocation, $otherAccomplishments
                 )->then( function($opportunities) use ($outreachLocation, $accountId, $contactId, $campaignOwner, $postData) {
 
                     // the email address is the 'Username' field of the campaign owner User object
@@ -211,20 +217,22 @@ function promiseToGetCampaignOwner( $campaignId ) {
 
 /**
  * Creates multiple new Opportunities in salesforce, based on the reported accomplishments.
- * @param $accountId {string} - salesforce Account object ID
- * @param $contactId {string} - salesforce Contact object ID
+ * @param $accountId {string} - salesforce Account object ID, representing the Account for the location visited
+ * @param $contactId {string} - salesforce Contact object ID, representing the primary Contact for the location visited
+ * @param $volunteerName {string} - the name of the volunteer who visited the location
  * @param $accomplishments {string[]} - an array of special keywords representing specific accomplishments, or descriptions of accomplishments
  * @param $campaignOwnerId {object} - salesforce User object ID
  * @param $outreachLocation {object} - an instance of the TAT_App_Outreach_Location__c object in salesforce
  * @param $otherAccomplishments {string} - A potentially long string describing some accomplishment
  * @return - a Promise which resolves with an array of objects representing the new Opportunities. Each has a property `id`
  */
-function promiseToCreateOpportunities( $accountId, $contactId, $accomplishments, $campaignOwnerId, $outreachLocation, $otherAccomplishments = '' ) {
+function promiseToCreateOpportunities( $accountId, $contactId, $volunteerName, $accomplishments, $campaignOwnerId, $outreachLocation, $otherAccomplishments = '' ) {
     $newOpps = array();
     $oneMonthFromToday = new DateTime();
     $oneMonthFromToday->add( new DateInterval('P1M') );
     $inOneMonthDate = $oneMonthFromToday->format( 'm/d/Y' );
     $inOneMonthISO = $oneMonthFromToday->format( 'c' );
+    $volunteerNote = 'Volunteer who produced this opportunity: ' . $volunteerName;
 
     // the "Opportunity Record Type" field has a data type of "Record Type", which is some kind of object of its own.
     // We're interested in using only a few instances of "Record Type". The IDs of these instances are defined below.
@@ -243,7 +251,8 @@ function promiseToCreateOpportunities( $accountId, $contactId, $accomplishments,
         'CloseDate' => $inOneMonthISO,
         'OwnerId' => $campaignOwnerId,
         'CampaignId' => $outreachLocation->Campaign__c,
-        'StageName' => 'Prospecting'
+        'StageName' => 'Prospecting',
+        'Description' => $volunteerNote
     );
 
     // using a for-loop instead of array_map has the benefit of filtering out invalid values of `$accomplishments`
@@ -283,7 +292,7 @@ function promiseToCreateOpportunities( $accountId, $contactId, $accomplishments,
         array_push( $newOpps, array_merge($defaultOpp, array(
             'RecordTypeId' => $oppRecordTypes->otherInvolvement,
             'Name' => $outreachLocation->Name . ' - OI: from Vol Dis Outreach - ' . $inOneMonthDate,
-            'Description' => $otherAccomplishments,
+            'Description' => $otherAccomplishments . "\n\n" . $volunteerNote,
             'Probability' => 0
         )));
     }
