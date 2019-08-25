@@ -15,8 +15,29 @@ if ( !isset($_GET['code']) ) {
     errorExit( 400, 'You must define the "code" GET parameter.' );
 }
 
-// check the submitted code against registration codes saved in sf
 $code = $_GET['code'];
+
+// get special registration codes, which aren't in salesforce
+$regCodes = getSpecialRegistrationCodes();
+// @@ check if one of the codes matches, and return info
+if ( $code === $regCodes['individual-volunteer-distributors'] ) {
+    echo json_encode( (object)array(
+        // @@ accountId and teamCoordinators will need to be optional return values. make sure the client can handle this?
+        'success' => TRUE,
+        'volunteerType' => 'volunteerDistributor',
+        'isIndividualDistributor' => true
+    ));
+    exit;
+} else if ( $code === $regCodes['tat-ambassadors'] ) {
+    echo json_encode( (object)array(
+        'success' => TRUE,
+        'volunteerType' => 'ambassadorVolunteer',
+    ));
+    exit;
+}
+
+
+// check the submitted code against registration codes saved in sf
 makeSalesforceRequestWithTokenExpirationCheck( function() use ($code) {
     $escapedCode = escapeSingleQuotes( $code );
     return getAllSalesforceQueryRecordsAsync( "SELECT Id from Account WHERE TAT_App_Registration_Code__c = '{$escapedCode}'" );
@@ -34,7 +55,6 @@ makeSalesforceRequestWithTokenExpirationCheck( function() use ($code) {
             echo json_encode( (object)array(
                 'success' => TRUE,
                 'accountId' => $accountId,
-                // @@ the following is placeholder data until we figure out a better way to do this
                 'volunteerType' => 'volunteerDistributor',
                 'isIndividualDistributor' => false,
                 'teamCoordinators' => $coordinators
