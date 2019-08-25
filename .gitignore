@@ -3,3 +3,7 @@ sf-auth.json
 contact-ids.json
 contact-ids.sqlite
 vendor/
+
+config.prod.json
+sf-auth.prod.json
+google-service-account.json
