@@ -1,7 +1,10 @@
 <?php
 
+use Kreait\Firebase;
+
 $jsonCacheFilepath = __DIR__ . '/contact-ids.json';
 $sqliteCacheFilepath = __DIR__ . '/contact-ids.sqlite';
+$gServiceAccountCredentialsFilepath = __DIR__ . '/google-service-account.json';
 
 // To support CORS, return 200 for HEAD or OPTIONS requests.
 if ( $_SERVER['REQUEST_METHOD'] === 'HEAD' || $_SERVER['REQUEST_METHOD'] === 'OPTIONS' ) {
@@ -428,4 +431,19 @@ function getProperty( $object, $propertyName, $default = null ) {
 	} else {
 	    return $default;
 	}
+}
+
+/**
+ * Gets registration codes which are stored in Firebase database. Only group volunteer distributors have reg codes
+ * stored in Salesforce, so other volunteer types have their registration codes stored in firebase.
+ * Returns an array with keys 'individual-volunteer-distributors' and 'tat-ambassadors'.
+ */
+function getSpecialRegistrationCodes() {
+    // authenticate as the firebase service account
+    global $gServiceAccountCredentialsFilepath;
+    $firebaseServiceAccount = Firebase\ServiceAccount::fromJsonFile( $gServiceAccountCredentialsFilepath );
+    $firebase = (new Firebase\Factory)->withServiceAccount( $firebaseServiceAccount )->create();
+    $fireDatabase = $firebase->getDatabase();
+    $regCodes = $fireDatabase->getReference( 'registration-codes' )->getValue();
+    return $regCodes;
 }

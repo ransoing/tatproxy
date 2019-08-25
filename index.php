@@ -1,5 +1,6 @@
 <?php
 require_once( 'functions.php' );
+require_once( 'api-support-functions.php' );
 
 ?><!DOCTYPE html>
 <html>
@@ -16,7 +17,7 @@ require_once( 'functions.php' );
 <main>
 	<h1>About</h1>
 	<p>
-		The TAT Salesforce account stores data associated with each user of the <strong>TAT mobile app</strong>.
+		The Truckers Against Trafficking (TAT) Salesforce account stores data associated with each user of the <strong>TAT mobile app</strong>.
 		The mobile app uses this data stored in Salesforce. However, the mobile app does not
 		directly communicate with Salesforce&mdash;it communicates with this <em>proxy</em> instead.
 		This proxy is given authorization to read any user's data from Salesforce. Users of the TAT app

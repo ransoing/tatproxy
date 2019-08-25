@@ -3,13 +3,13 @@
 // error_reporting(E_ALL | E_NOTICE); //@@##
 // ini_set('display_errors', TRUE);
 
+require_once( __DIR__ . '/vendor/autoload.php' );
+
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-require_once( __DIR__ . '/vendor/autoload.php' );
-
-$salesforceOAuthBase = 'https://login.salesforce.com/services/oauth2';// @@
-// $salesforceOAuthBase = 'https://test.salesforce.com/services/oauth2';
+// $salesforceOAuthBase = 'https://login.salesforce.com/services/oauth2';// @@
+$salesforceOAuthBase = 'https://test.salesforce.com/services/oauth2';
 
 $loop = \React\EventLoop\Factory::create();
 $browser = new \Clue\React\Buzz\Browser( $loop );
@@ -17,6 +17,7 @@ $browser = new \Clue\React\Buzz\Browser( $loop );
 $config = null;
 $sfAuth = null;
 
+	
 // set up the mailer
 getConfig();
 $mailerSetUp = true;
@@ -118,6 +119,19 @@ function getFirebaseStatus() {
 		}
 		// check for indications of a bad ID token (which implies a good API key)
 		if ( $apiResponse['content']->error->message === 'INVALID_ID_TOKEN' ) {
+
+			// now check to see if the google service account is set up.
+			try {
+				@getSpecialRegistrationCodes();
+			} catch ( \Exception $e ) {
+				return [
+					'code' => 5,
+					'error' => $e->getMessage(),
+					'instructions' => 'Go to \'Project settings\' in the Firebase console, then the \'Service accounts\' tab, and click \'Generate a new private key\'. Place the file as <code>google-service-account.json</code> in the same directory as <code>config.json</code> on the server. Ensure that the service account has privileges to read all Firebase data for the project.'
+				];
+			}
+
+			// all is well.
 			return $fbStatuses[0];
 		}
 	}
