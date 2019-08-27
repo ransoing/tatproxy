@@ -19,10 +19,9 @@ $code = $_GET['code'];
 
 // get special registration codes, which aren't in salesforce
 $regCodes = getSpecialRegistrationCodes();
-// @@ check if one of the codes matches, and return info
+// check if one of the codes matches, and return info
 if ( $code === $regCodes['individual-volunteer-distributors'] ) {
     echo json_encode( (object)array(
-        // @@ accountId and teamCoordinators will need to be optional return values. make sure the client can handle this?
         'success' => TRUE,
         'volunteerType' => 'volunteerDistributor',
         'isIndividualDistributor' => true

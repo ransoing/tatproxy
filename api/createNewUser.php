@@ -17,9 +17,12 @@ $postData = getPOSTData();
 // map POST data to salesforce fields
 $sfData = array(
     'TAT_App_Firebase_UID__c' =>    $firebaseUid,
-    'TAT_App_Is_Team_Coordinator__c' =>   $postData->isCoordinator,
-    'TAT_App_Team_Coordinator__c' => $postData->coordinatorId
+    'TAT_App_Is_Team_Coordinator__c' =>   $postData->isCoordinator
 );
+
+if ( !empty($postData->coordinatorId) ) {
+    $sfData['TAT_App_Team_Coordinator__c'] = $postData->coordinatorId;
+}
 
 if ( empty($postData->salesforceId) ) {
     // only include these fields if we're creating a new Contact object
@@ -34,23 +37,34 @@ if ( empty($postData->salesforceId) ) {
 }
 
 $code = $postData->registrationCode;
-makeSalesforceRequestWithTokenExpirationCheck( function() use ($code) {
+makeSalesforceRequestWithTokenExpirationCheck( function() use ($code, $sfData) {
     // verify the registration code
     $escapedCode = escapeSingleQuotes( $code );
-    return getAllSalesforceQueryRecordsAsync( "SELECT Id from Account WHERE TAT_App_Registration_Code__c = '{$escapedCode}'" );
-})->then( function($records) use ($sfData, $postData, $firebaseUid) {
-    if ( sizeof($records) === 0 ) {
-        $message = json_encode(array(
-            'errorCode' => 'INCORRECT_REGISTRATION_CODE',
-            'message' => 'The registration code was incorrect.'
-        ));
-        throw new Exception( $message );
-    }
+    return getAllSalesforceQueryRecordsAsync( "SELECT Id from Account WHERE TAT_App_Registration_Code__c = '{$escapedCode}'" )->then( function($records) use ($code, $sfData) {
 
-    $sfData['AccountId'] = $records[0]->Id;
-    // @@ figure out how to actually get the volunteer type for this registration code
-    $sfData['TAT_App_Volunteer_Type__c'] = 'volunteerDistributor';
+        // get special registration codes, which aren't in salesforce
+        $regCodes = getSpecialRegistrationCodes();
 
+        if ( $regCodes['individual-volunteer-distributors'] === $code ) {
+            $sfData['TAT_App_Volunteer_Type__c'] = 'volunteerDistributor';
+            return $sfData;
+        } else if ( $regCodes['tat-ambassadors'] === $code ) {
+            $sfData['TAT_App_Volunteer_Type__c'] = 'ambassadorVolunteer';
+            return $sfData;
+        } else {
+            if ( sizeof($records) === 0 ) {
+                $message = json_encode(array(
+                    'errorCode' => 'INCORRECT_REGISTRATION_CODE',
+                    'message' => 'The registration code was incorrect.'
+                ));
+                throw new Exception( $message );
+            }
+            $sfData['AccountId'] = $records[0]->Id;
+            $sfData['TAT_App_Volunteer_Type__c'] = 'volunteerDistributor';
+            return $sfData;
+        }
+    });
+})->then( function($sfData) use ($postData, $firebaseUid) {
     // verify that no Contact in salesforce has the given firebaseUid
     return getSalesforceContactID( $firebaseUid )->then(
         function() {

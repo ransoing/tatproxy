@@ -63,7 +63,7 @@ $apiFunctions['getUserData']['basic'] = function( $contactID ) {
             'state' => $response->TAT_App_Materials_State__c,
             'zip' => $response->TAT_App_Materials_Zip__c,
             'country' => $response->TAT_App_Materials_Country__c,
-            'isOnVolunteerTeam' => true, // @@ get this info from the user's Account
+            'isOnVolunteerTeam' => !empty( $response->TAT_App_Team_Coordinator__c ),
             'isTeamCoordinator' => $response->TAT_App_Is_Team_Coordinator__c,
             'teamCoordinatorId' => $response->TAT_App_Team_Coordinator__c
         );
