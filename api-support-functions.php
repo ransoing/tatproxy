@@ -385,7 +385,7 @@ function getJsonBodyFromResponse( $response ) {
         $body = '{}';
     }
     $json = json_decode( $body );
-    if ( $json === null ) throw new Exception( 'Malformed jsone.' );
+    if ( $json === null ) throw new Exception( 'Malformed json.' );
     return $json;
 }
 

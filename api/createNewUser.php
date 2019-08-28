@@ -110,12 +110,26 @@ makeSalesforceRequestWithTokenExpirationCheck( function() use ($code, $sfData) {
                 return salesforceAPIPatchAsync( "sobjects/Contact/{$postData->salesforceId}/", $sfData );
             });
         }
+    })->then( function($response) use($postData, $sfData) {
+        $contactId = ( empty($postData->salesforceId) ? $response->id : $postData->salesforceId );
+
+        // echo the ID of the object created/updated
+        echo json_encode( (object)array(
+            'contactId' => $contactId
+        ));
+        
+        // if the user is a volunteer distributor, add to the volunteer distributor campaign
+        if ( $sfData['TAT_App_Volunteer_Type__c'] === 'volunteerDistributor' ) {
+            // create a CampaignMember linking the contact to the campaign at 701o000000020AUAAY
+            $distributorCampaignId = '701o000000020AUAAY';
+            return salesforceAPIPostAsync( 'sobjects/CampaignMember/', array(
+                'CampaignId' => $distributorCampaignId,
+                'ContactId' => $contactId
+            ));
+        } else {
+            return true;
+        }
     });
-})->then( function($response) use($postData) {
-    // echo the ID of the object created/updated
-    echo json_encode( (object)array(
-        'contactId' => empty($postData->salesforceId) ? $response->id : $postData->salesforceId
-    ));
 })->otherwise(
     $handleRequestFailure
 );
