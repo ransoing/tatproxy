@@ -22,6 +22,12 @@ if ( isset($postData->coordinatorId) ) {
 if ( isset($postData->hasWatchedTrainingVideo) ) {
     $sfData['TAT_App_Has_Watched_Training_Video__c'] = $postData->hasWatchedTrainingVideo;
 }
+if ( isset($postData->trainingVideoLastWatchedDate) ) {
+    $sfData['TAT_App_Training_Video_Last_Watched_Date__c'] = $postData->trainingVideoLastWatchedDate;
+}
+if ( isset($postData->trainingVideoRequiredForTeam) ) {
+    $sfData['TAT_App_Team_Must_Watch_Training_Video__c'] = $postData->trainingVideoRequiredForTeam;
+}
 
 
 // Verify that the user has a Contact object

@@ -35,6 +35,7 @@ $apiFunctions['getUserData']['basic'] = function( $contactID ) {
     $queryFields = array(
         'TAT_App_Volunteer_Type__c',
         'TAT_App_Has_Watched_Training_Video__c',
+        'TAT_App_Training_Video_Last_Watched_Date__c',
         'FirstName',
         'LastName',
         'AccountId',
@@ -44,7 +45,8 @@ $apiFunctions['getUserData']['basic'] = function( $contactID ) {
         'TAT_App_Materials_Zip__c',
         'TAT_App_Materials_Country__c',
         'TAT_App_Is_Team_Coordinator__c',
-        'TAT_App_Team_Coordinator__c'
+        'TAT_App_Team_Coordinator__c',
+        'TAT_App_Team_Must_Watch_Training_Video__c'
     );
     return salesforceAPIGetAsync(
         "sobjects/Contact/${contactID}/",
@@ -55,6 +57,7 @@ $apiFunctions['getUserData']['basic'] = function( $contactID ) {
             'salesforceId' => $contactID,
             'volunteerType' => $response->TAT_App_Volunteer_Type__c,
             'hasWatchedTrainingVideo' => $response->TAT_App_Has_Watched_Training_Video__c,
+            'trainingVideoLastWatchedDate' => $response->TAT_App_Training_Video_Last_Watched_Date__c,
             'firstName' => $response->FirstName,
             'lastName' => $response->LastName,
             'accountId' => $response->AccountId,
@@ -65,7 +68,8 @@ $apiFunctions['getUserData']['basic'] = function( $contactID ) {
             'country' => $response->TAT_App_Materials_Country__c,
             'isOnVolunteerTeam' => !empty( $response->TAT_App_Team_Coordinator__c ),
             'isTeamCoordinator' => $response->TAT_App_Is_Team_Coordinator__c,
-            'teamCoordinatorId' => $response->TAT_App_Team_Coordinator__c
+            'teamCoordinatorId' => $response->TAT_App_Team_Coordinator__c,
+            'trainingVideoRequiredForTeam' => $response->TAT_App_Team_Must_Watch_Training_Video__c
         );
     });
 };

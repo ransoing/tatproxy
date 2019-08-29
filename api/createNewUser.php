@@ -15,9 +15,14 @@ $firebaseUid = verifyFirebaseLogin();
 $postData = getPOSTData();
 
 // map POST data to salesforce fields
+if ( empty($postData->trainingVideoRequiredForTeam) ) {
+    $postData->trainingVideoRequiredForTeam = true;
+}
+
 $sfData = array(
     'TAT_App_Firebase_UID__c' =>    $firebaseUid,
-    'TAT_App_Is_Team_Coordinator__c' =>   $postData->isCoordinator
+    'TAT_App_Is_Team_Coordinator__c' =>   $postData->isCoordinator,
+    'TAT_App_Team_Must_Watch_Training_Video__c' => $postData->trainingVideoRequiredForTeam
 );
 
 if ( !empty($postData->coordinatorId) ) {
@@ -66,7 +71,7 @@ makeSalesforceRequestWithTokenExpirationCheck( function() use ($code, $sfData) {
     });
 })->then( function($sfData) use ($postData, $firebaseUid) {
     // verify that no Contact in salesforce has the given firebaseUid
-    return getSalesforceContactID( $firebaseUid )->then(
+    $promiseToCheckFirebaseUid = getSalesforceContactID( $firebaseUid )->then(
         function() {
             // we got a ContactID, which means this firebase user already has a salesforce entry! We shouldn't let the user proceed.
             $message = json_encode((object)array(
@@ -83,7 +88,34 @@ makeSalesforceRequestWithTokenExpirationCheck( function() use ($code, $sfData) {
                 throw $e;
             }
         }
-    )->then( function() use ($sfData, $postData) {
+    );
+
+    // if the user has a team coordinator, check that coordinator's Contact to see if this user needs to watch the training video
+    // return a promise which resolves with whether the new contact must watch the training video
+    if ( empty($postData->coordinatorId) ) {
+        // require that the user watches the video unless they are a coordinator who is not requiring his team to watch the video
+        $promiseToFindVideoRequirement = \React\Promise\FulfilledPromise( !($postData->isCoordinator && !$postData->trainingVideoRequiredForTeam) );
+    } else {
+        $promiseToFindVideoRequirement = getAllSalesforceQueryRecordsAsync(
+            "SELECT TAT_App_Team_Must_Watch_Training_Video__c from Contact WHERE Id = '{$postData->coordinatorId}'"
+        )->then( function($records) {
+            if ( sizeof($records) > 0 ) {
+                return $records[0]->TAT_App_Team_Must_Watch_Training_Video__c;
+            }
+            return true;
+        });
+    }
+
+    return \React\Promise\all( array(
+        $promiseToCheckFirebaseUid,
+        $promiseToFindVideoRequirement
+    ))->then( function($results) use ($sfData, $postData) {
+        // say that the user has watched the training video if we've determined that they don't need to watch it
+        $mustWatchVideo = $results[1];
+        if ( !$mustWatchVideo ) {
+            $sfData['TAT_App_Has_Watched_Training_Video__c'] = true;
+            $sfData['TAT_App_Training_Video_Last_Watched_Date__c'] = date('c');
+        }
         if ( empty($postData->salesforceId) ) {
             // create a new Contact object
             return salesforceAPIPostAsync( 'sobjects/Contact/', $sfData );

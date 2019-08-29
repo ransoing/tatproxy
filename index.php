@@ -325,6 +325,10 @@ require_once( 'api-support-functions.php' );
 					<p><code>coordinatorId</code> {string}</p>
 					<p>The Salesforce Contact ID of the user's volunteer team coordinator (if the user is not the team coordinator).</p>
 				</div>
+				<div>
+					<p><code>trainingVideoRequiredForTeam</code> {boolean}</p>
+					<p>For volunteer distributor team leaders. Whether new team members are required to watch the training video when they sign up.</p>
+				</div>
 			</section>
 		</div>
 		
@@ -359,7 +363,8 @@ Content-Type: application/json
     "firebaseIdToken": "abcd1234",
     "registrationCode": "correct-horse-battery-staple",
     "salesforceId": "JOF7EK0enoejMOE8",
-    "isCoordinator": true
+    "isCoordinator": true,
+    "trainingVideoRequiredForTeam": false
 }</pre>
 
 
@@ -389,6 +394,14 @@ Content-Type: application/json
 				<div>
 					<p><code>hasWatchedTrainingVideo</code> {boolean}</p>
 					<p>Whether the user has watched the training video.</p>
+				</div>
+				<div>
+					<p><code>trainingVideoLastWatchedDate</code> {string, YYYY-MM-DD}</p>
+					<p>When the user last watched the training video in the app.</p>
+				</div>
+				<div>
+					<p><code>trainingVideoRequiredForTeam</code> {boolean}</p>
+					<p>For volunteer distributor team leaders. Whether new team members are required to watch the training video when they sign up.</p>
 				</div>
 			</section>
 		</div>
@@ -464,13 +477,16 @@ Content-Type: application/json
     volunteerType: {string},
 	accountId: {string},
     hasWatchedTrainingVideo: {boolean},
+	trainingVideoLastWatchedDate: {string (ISO-8601 or YYYY-MM-DD)},
     street: {string},
     city: {string},
     state: {string},
     zip: {string},
 	country: {string},
     isTeamCoordinator: {boolean},
-    teamCoordinatorId: {string} // ContactID of the salesforce object representing the user's team coordinator
+    teamCoordinatorId: {string}, // ContactID of the salesforce object representing the user's team coordinator
+	isOnVolunteerTeam: {boolean},
+	trainingVideoRequiredForTeam: {boolean}
 }</pre>
 
 		<p>
