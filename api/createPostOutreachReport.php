@@ -42,7 +42,7 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
         $locationFields = array( 'Id', 'Name', 'Contact_Email__c', 'Contact_First_Name__c', 'Contact_Last_Name__c', 'Contact_Phone__c', 'Contact_Title__c', 'Country__c', 'State__c', 'City__c', 'Street__c', 'Zip__c', 'Type__c', 'Campaign__c' );
         $locationFieldsString = implode( ',', $locationFields );
         $contactFields = array( 'FirstName', 'LastName' );
-        $contactFieldsString = implode( ',', $contactFieldsString );
+        $contactFieldsString = implode( ',', $contactFields );
         return \React\Promise\all( array(
             salesforceAPIGetAsync( 'sobjects/TAT_App_Outreach_Location__c/' . $postData->outreachLocationId, array('fields' => $locationFieldsString) ),
             salesforceAPIGetAsync( 'sobjects/Contact/' . $contactID, array('fields' => $contactFieldsString) )
@@ -126,7 +126,7 @@ function promiseToMakeAccountAndContact( $postData, $outreachLocation, $campaign
         escapeSingleQuotes($outreachLocation->State__c),
         escapeSingleQuotes($outreachLocation->City__c),
         escapeSingleQuotes($outreachLocation->Street__c)
-    ))->then( function($records) use ($postData, $outreachLocation, $campaignOnwerId) {
+    ))->then( function($records) use ($postData, $outreachLocation, $campaignOwnerId) {
         // ultimately return the ID of an Account; either a new one or one that already exists
 
         if ( sizeof($records) > 0 ) {

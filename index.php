@@ -134,7 +134,7 @@ require_once( 'api-support-functions.php' );
 			<li><a href="#updateUser">updateUser</a></li>
 			<li><a href="#getUserData">getUserData</a></li>
 			<li><a href="#getCampaigns">getCampaigns</a></li>
-			<li><a href="#createTestimonial">createTestimonial</a></li>
+			<li><a href="#createFeedback">createFeedback</a></li>
 			<li><a href="#createPreOutreachSurvey">createPreOutreachSurvey</a></li>
 			<li><a href="#createPostOutreachReport">createPostOutreachReport</a></li>
 			<li><a href="#deleteOutreachLocation">deleteOutreachLocation</a></li>
@@ -501,11 +501,12 @@ Content-Type: application/json
             id: {string}, // the identifier of the Salesforce object representing the outreach activity or event activity
             name: {string},
             type: {'cdlSchool' | 'truckingCompany' | 'truckStop' | 'event'},
+            campaignId: {string},
             street: {string},
             city: {string},
             state: {string},
             zip: {string},
-			country: {string},
+            country: {string},
             date: {string (ISO-8601 or YYYY-MM-DD)}, // planned date of outreach, or date of event
             contact: { // the person to be contacted at the defined location
                 name: {string},
@@ -588,12 +589,12 @@ Content-Type: application/json
 
 
 		<!-- ==================================== -->
-		<a name="createTestimonial"></a>
-		<h2>createTestimonial</h2>
-		<p><b>createTestimonial</b> adds the data from a testimonial/feedback survey to Salesforce.</p>
+		<a name="createFeedback"></a>
+		<h2>createFeedback</h2>
+		<p><b>createFeedback</b> adds the data from a testimonial/feedback survey to Salesforce.</p>
 
 		<h3>Make a POST request to:</h3>
-		<pre>/api/createTestimonial</pre>
+		<pre>/api/createFeedback</pre>
 
 		<h3>POST request body payload parameters</h3>
 		<div class="section-wrap">
@@ -605,6 +606,10 @@ Content-Type: application/json
 						from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
 						login state, and access various Firebase resources.
 					</p>
+				</div>
+				<div>
+					<p><code>campaignId</code> {string}</p>
+					<p>The ID of the campaign in salesforce associated with this feedback submission.</p>
 				</div>
 				<div>
 					<p><code>advice</code> {string}</p>
@@ -636,7 +641,7 @@ Content-Type: application/json
 
 		<h3>Example request</h3>
 		<pre>// URL:
-POST /api/createTestimonial
+POST /api/createFeedback
 
 // Headers:
 Content-Type: application/json

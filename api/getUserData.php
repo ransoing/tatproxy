@@ -95,6 +95,7 @@ $apiFunctions['getUserData']['unfinishedActivities'] = function ( $contactID ) {
                 'Is_Completed__c',
                 'Team_Lead__c',
                 'Type__c',
+                'Campaign__c',
                 'Street__c',
                 'City__c',
                 'State__c',
@@ -126,6 +127,7 @@ $apiFunctions['getUserData']['unfinishedActivities'] = function ( $contactID ) {
                         'zip' => $record->Zip__c,
                         'country' => $record->Country__c,
                         'date' => $record->Planned_Date__c,
+                        'campaignId' => $record->Campaign__c,
                         'contact' => (object)array(
                             'firstName' => $record->Contact_First_Name__c,
                             'lastName' => $record->Contact_Last_Name__c,
