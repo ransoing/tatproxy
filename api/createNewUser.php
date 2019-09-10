@@ -15,7 +15,7 @@ $firebaseUid = verifyFirebaseLogin();
 $postData = getPOSTData();
 
 // map POST data to salesforce fields
-if ( empty($postData->trainingVideoRequiredForTeam) ) {
+if ( !isset($postData->trainingVideoRequiredForTeam) ) {
     $postData->trainingVideoRequiredForTeam = true;
 }
 
@@ -93,8 +93,8 @@ makeSalesforceRequestWithTokenExpirationCheck( function() use ($code, $sfData) {
     // if the user has a team coordinator, check that coordinator's Contact to see if this user needs to watch the training video
     // return a promise which resolves with whether the new contact must watch the training video
     if ( empty($postData->coordinatorId) ) {
-        // require that the user watches the video unless they are a coordinator who is not requiring his team to watch the video
-        $promiseToFindVideoRequirement = \React\Promise\FulfilledPromise( !($postData->isCoordinator && !$postData->trainingVideoRequiredForTeam) );
+        // either the user is a team coordinator, or is an individual volunteer of some kind. Require the video
+        $promiseToFindVideoRequirement = new \React\Promise\FulfilledPromise( true );
     } else {
         $promiseToFindVideoRequirement = getAllSalesforceQueryRecordsAsync(
             "SELECT TAT_App_Team_Must_Watch_Training_Video__c from Contact WHERE Id = '{$postData->coordinatorId}'"
