@@ -2,8 +2,10 @@ config.json
 sf-auth.json
 contact-ids.json
 contact-ids.sqlite
+google-service-account.json
 vendor/
+external-resources/
 
 config.prod.json
 sf-auth.prod.json
-google-service-account.json
+
