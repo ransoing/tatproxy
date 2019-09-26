@@ -14,6 +14,8 @@ require_once( '../api-support-functions.php' );
 $firebaseUid = verifyFirebaseLogin();
 $postData = getPOSTData();
 
+addToLog( 'command: updateUser. POST data:', $postData );
+
 // map POST data to salesforce fields
 $sfData = array();
 if ( isset($postData->coordinatorId) ) {

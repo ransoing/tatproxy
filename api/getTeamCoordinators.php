@@ -10,6 +10,8 @@ require_once( '../api-support-functions.php' );
 
 $accountId = $_GET['accountId'];
 
+addToLog( 'command: getTeamCoordinators. GET params:', $_GET );
+
 makeSalesforceRequestWithTokenExpirationCheck( function() use ($accountId) {
     return getTeamCoordinators( $accountId );
 })->then( function($coordinators) {

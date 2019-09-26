@@ -20,6 +20,8 @@ if ( !isset($_GET['email']) || !isset($_GET['phone']) ) {
     errorExit( 400, 'You must define both GET parameters "email" and "phone".' );
 }
 
+addToLog( 'command: contactSearch. GET params:', $_GET );
+
 // make the request.
 makeSalesforceRequestWithTokenExpirationCheck( function() {
     
@@ -67,14 +69,14 @@ makeSalesforceRequestWithTokenExpirationCheck( function() {
                 return $records[0]->Id;
             } else {
                 // return some expected error so the app knows that the matching Contact already has an associated firebase account
-                throw new Exception( json_encode((object)array(
+                throw new ExpectedException( json_encode((object)array(
                     'errorCode' => 'ENTRY_ALREADY_HAS_ACCOUNT',
                     'message' => 'There is already a user account associated with this Contact entry.'
                 )));
             }
         } else {
             // return some expected error so that the app can know when no Contact entry matches the given email/phone
-            throw new Exception( json_encode((object)array(
+            throw new ExpectedException( json_encode((object)array(
                 'errorCode' => 'NO_MATCHING_ENTRY',
                 'message' => 'There is no Contact that has the specified email address or phone number.'
             )));

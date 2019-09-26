@@ -14,6 +14,8 @@ require_once( '../api-support-functions.php' );
 $firebaseUid = verifyFirebaseLogin();
 $postData = getPOSTData();
 
+addToLog( 'command: createPostOutreachReport. POST data:', $postData );
+
 // sanitize outreachLocationId by removing quotes
 $postData->outreachLocationId = str_replace( array("'", '"'), "", $postData->outreachLocationId );
 
@@ -208,6 +210,7 @@ function promiseToGetCampaignOwner( $campaignId ) {
         "SELECT Username, Id FROM User WHERE Id IN (SELECT OwnerId FROM Campaign WHERE Campaign.Id = '{$campaignId}')"
     )->then( function($records) {
         if ( sizeof($records) === 0 ) {
+            // not an expected exception
             throw new Exception( 'Failed to get campaign owner.\n' . json_encode($records) );
         }
         return $records[0];

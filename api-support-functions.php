@@ -1,5 +1,7 @@
 <?php
 
+require_once( __DIR__ . '/error-handling.php' );
+
 use Kreait\Firebase;
 
 $jsonCacheFilepath = __DIR__ . '/contact-ids.json';
@@ -25,22 +27,6 @@ if ( !function_exists('getallheaders') ) {
         return $headers;
     }
 }
-
-function errorExit( $httpCode, $errorMessage ) {
-    http_response_code( $httpCode );
-    echo $errorMessage;
-    exit;
-}
-
-// Use this for the highest level failure handler (after determining that the access token desn't need to be refreshed)
-$handleRequestFailure = function( $e ) {
-    if ( method_exists($e, 'getResponse') ) {
-        $message = $e->getResponse()->getBody();
-    } else {
-        $message = $e->getMessage();
-    }
-    errorExit( 400, $message );
-};
 
 
 // gets POST data sent as either JSON or as form-encoded data.
@@ -155,7 +141,7 @@ function getSalesforceContactID( $firebaseUid ) {
     })->then( function($queryRecords) use ($firebaseUid) {
         if ( sizeof($queryRecords) === 0 ) {
             // return some expected error so that the app can know when the user is a new user (has no salesforce entry).
-            throw new Exception( json_encode((object)array(
+            throw new ExpectedException( json_encode((object)array(
                 'errorCode' => 'FIREBASE_USER_NOT_IN_SALESFORCE',
                 'message' => 'The specified Firebase user does not have an associated Contact entry in Salesforce'
             )));
@@ -233,9 +219,14 @@ function salesforceAPIGetAsync( $urlSegment, $data = array() ) {
     $url = $sfAuth->instance_url . '/services/data/v44.0/' . $urlSegment . '.json?' . http_build_query( $data );
     $headers = array( 'Authorization' => 'Bearer ' . $sfAuth->access_token );
     
+    addToLog( 'GET: ' . $url );
+    addToLog( 'headers:', $headers );
+
     // add access token to header and make the request
     return $browser->get( $url, $headers )->then( function($response) {
-        return getJsonBodyFromResponse( $response );
+        $responseBody = getJsonBodyFromResponse( $response );
+        addToLog( 'response:', $responseBody );
+        return $responseBody;
     });
 }
 
@@ -254,9 +245,15 @@ function salesforceAPIAsync( $method, $urlSegment, $data = array() ) {
         'Content-Type' => 'application/json'
     );
 
+    addToLog( 'request method: ' . $method . ' URL: ' . $url );
+    addToLog( 'headers:', $headers );
+    addToLog( 'request body:', $data );
+
     // add access token to header and make the request
     return $browser->$method( $url, $headers, json_encode($data) )->then( function($response) {
-        return getJsonBodyFromResponse( $response );
+        $responseBody = getJsonBodyFromResponse( $response );
+        addToLog( 'response:', $responseBody );
+        return $responseBody;
     });
 }
 // convenience functions
@@ -332,6 +329,7 @@ function refreshSalesforceTokenAsync() {
     $config = getConfig();
 
     // get a new auth token using the refresh token
+    addToLog( 'refreshing salesforce token' );
     return $browser->post(
         "${salesforceOAuthBase}/token",
         array( 'Content-Type' => 'application/x-www-form-urlencoded' ),

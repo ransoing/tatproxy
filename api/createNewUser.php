@@ -14,6 +14,8 @@ require_once( '../api-support-functions.php' );
 $firebaseUid = verifyFirebaseLogin();
 $postData = getPOSTData();
 
+addToLog( 'command: createNewUser. POST data:', $postData );
+
 // map POST data to salesforce fields
 if ( !isset($postData->trainingVideoRequiredForTeam) ) {
     $postData->trainingVideoRequiredForTeam = true;
@@ -62,7 +64,7 @@ makeSalesforceRequestWithTokenExpirationCheck( function() use ($code, $sfData) {
                     'errorCode' => 'INCORRECT_REGISTRATION_CODE',
                     'message' => 'The registration code was incorrect.'
                 ));
-                throw new Exception( $message );
+                throw new ExpectedException( $message );
             }
             $sfData['AccountId'] = $records[0]->Id;
             $sfData['TAT_App_Volunteer_Type__c'] = 'volunteerDistributor';
@@ -78,7 +80,7 @@ makeSalesforceRequestWithTokenExpirationCheck( function() use ($code, $sfData) {
                 'errorCode' => 'FIREBASE_USER_ALREADY_IN_SALESFORCE',
                 'message' => 'The specified Firebase user already has an associated Contact entry in Salesforce, and is not allowed to create a new one.'
             ));
-            throw new Exception( $message );
+            throw new ExpectedException( $message );
         },
         function( $e ) {
             if ( $e && @$e->getMessage() && json_decode( $e->getMessage() )->errorCode === 'FIREBASE_USER_NOT_IN_SALESFORCE' ) {

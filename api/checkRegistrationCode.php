@@ -17,6 +17,8 @@ if ( !isset($_GET['code']) ) {
 
 $code = $_GET['code'];
 
+addToLog( 'command: checkRegistrationCode. GET params:', $_GET );
+
 // get special registration codes, which aren't in salesforce
 $regCodes = getSpecialRegistrationCodes();
 // check if one of the codes matches, and return info
@@ -46,7 +48,7 @@ makeSalesforceRequestWithTokenExpirationCheck( function() use ($code) {
             'errorCode' => 'INCORRECT_REGISTRATION_CODE',
             'message' => 'The registration code was incorrect.'
         ));
-        throw new Exception( $message );
+        throw new ExpectedException( $message );
     } else {
         // find the team coordinators associated with this Account
         $accountId = $records[0]->Id;

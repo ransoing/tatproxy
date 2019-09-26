@@ -14,6 +14,8 @@ require_once( '../api-support-functions.php' );
 $firebaseUid = verifyFirebaseLogin();
 $postData = getPOSTData();
 
+addToLog( 'command: deleteOutreachLocation. POST data:', $postData );
+
 // sanitize outreachLocationId by removing quotes
 $locationId = str_replace( array("'", '"'), "", $postData->outreachLocationId );
 

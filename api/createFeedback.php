@@ -14,6 +14,9 @@ require_once( '../api-support-functions.php' );
 $firebaseUid = verifyFirebaseLogin();
 $postData = getPOSTData();
 $now = date('c');
+
+addToLog( 'command: createFeedback. POST data:', $postData );
+
 // map POST data to salesforce fields
 
 $sfData = array(

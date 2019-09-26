@@ -10,6 +10,8 @@ require_once( '../api-support-functions.php' );
 
 $firebaseUid = verifyFirebaseLogin();
 
+addToLog( 'command: getCampaigns' );
+
 getSalesforceContactID( $firebaseUid )->then( function($contactID) {
     return makeSalesforceRequestWithTokenExpirationCheck( function() use ($contactID) {
         return getAllSalesforceQueryRecordsAsync(

@@ -15,6 +15,8 @@ require_once( '../api-support-functions.php' );
 $firebaseUid = verifyFirebaseLogin();
 $postData = getPOSTData();
 
+addToLog( 'command: createPreOutreachSurvey. POST data:', $postData );
+
 // sanitize campaignId by removing quotes
 $postData->campaignId = str_replace( array("'", '"'), "", $postData->campaignId );
 
