@@ -14,7 +14,7 @@ require_once( '../api-support-functions.php' );
 $firebaseUid = verifyFirebaseLogin();
 $postData = getPOSTData();
 
-addToLog( 'command: updateUser. POST data:', $postData );
+addToLog( 'command: updateUser. POST data received:', $postData );
 
 // map POST data to salesforce fields
 $sfData = array();
@@ -35,6 +35,7 @@ if ( isset($postData->trainingVideoRequiredForTeam) ) {
 // Verify that the user has a Contact object
 getSalesforceContactID( $firebaseUid )->then( function($contactID) use($sfData, $postData) {
     return makeSalesforceRequestWithTokenExpirationCheck( function() use ($contactID, $sfData) {
+        logSection( 'Updating Contact with new info' );
         return salesforceAPIPatchAsync( 'sobjects/Contact/' . $contactID, $sfData );
     })->then( function() use ($contactID, $postData) {
         if ( !isset($postData->coordinatorId) ) {
@@ -43,6 +44,7 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use($sfData, 
 
         // find all unfinished outreach locations submitted by the newly selected team lead, so we can add
         // this team member to the team lead's relevant campaigns
+        logSection( 'Getting unfinished outreach locations, and campaigns associated with Contact' );
         return \React\Promise\all( array(
             // get all relevant campaigns
             getAllSalesforceQueryRecordsAsync( "SELECT Campaign__c FROM TAT_App_Outreach_Location__c WHERE Is_Completed__c = false AND Team_Lead__c = '{$postData->coordinatorId}'" ),
@@ -78,6 +80,7 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use($sfData, 
             }, $campaignsToAddUserTo );
 
             // send it
+            logSection( 'Creating new CampaignMembers to link the Contact to multiple campaigns' );
             return salesforceAPIPostAsync( 'composite/sobjects/', array(
                 'allOrNone' => false,
                 'records' => $newCampaignMembers

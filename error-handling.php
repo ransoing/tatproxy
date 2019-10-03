@@ -21,8 +21,11 @@ $handleRequestFailure = function( $e ) {
     }
     if ( !($e instanceof ExpectedException) ) {
         // this is an unexpected exception. send an email to somebody who wants to know about these
-        $emailBody = str_replace("\n", "\n<br>", getLog()) . "\n\n<br><br>" . $message;
-        sendMail( getConfig()->sendErrorsTo, 'Error during tatproxy execution', $emailBody );
+        $emailBody = "tatproxy encountered an unexpected error while executing some code. See the execution log below."
+            . "<br><pre>" . str_replace("\n", "\n<br>", getLog()) . "\n\n<br><br>" . $message . "</pre>";
+        forEach( getConfig()->sendErrorsTo as $recipient ) {
+            sendMail( $recipient, 'Error during tatproxy execution', $emailBody );
+        }
     }
     errorExit( 400, $message );
 };
@@ -33,10 +36,12 @@ function addToLog( $description, $thing = false ) {
     global $log;
     $log .= $description . "\n";
     if ( !empty($thing) ) {
-        // @@ replacd with var_dump but capture the output to a string
-        $log .= print_r( $thing, true ) . "\n";
+        $log .= @var_export( $thing, true ) . "\n";
     }
     $log .= "\n";
+}
+function logSection( $description ) {
+    addToLog( "----------\n" . $description );
 }
 function getLog() {
     global $log;

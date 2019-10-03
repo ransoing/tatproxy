@@ -15,7 +15,7 @@
         "password": "9876abcd",
         "encryptionType": "use 'tls' or 'ssl'",
         "port": 587,
-        "replyTo": "somebody_else@example.com",
-        "sendErrorsTo": "ransoing@gmail.com"
-    }
+        "replyTo": "somebody_else@example.com"
+    },
+    "sendErrorsTo": [ "somebody@example.com", "somebody.else@example.com" ]
 }

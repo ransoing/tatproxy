@@ -20,7 +20,7 @@ if ( !isset($_GET['email']) || !isset($_GET['phone']) ) {
     errorExit( 400, 'You must define both GET parameters "email" and "phone".' );
 }
 
-addToLog( 'command: contactSearch. GET params:', $_GET );
+addToLog( 'command: contactSearch. GET params received:', $_GET );
 
 // make the request.
 makeSalesforceRequestWithTokenExpirationCheck( function() {
@@ -59,6 +59,7 @@ makeSalesforceRequestWithTokenExpirationCheck( function() {
     }
     $query .= ' OR ' . implode( ' OR ', $phoneFields );
 
+    logSection( 'Searching for Contact entries that match the given data' );
     return getAllSalesforceQueryRecordsAsync(
         $query
     )->then( function($records) {

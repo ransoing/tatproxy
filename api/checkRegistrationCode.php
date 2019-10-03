@@ -17,9 +17,10 @@ if ( !isset($_GET['code']) ) {
 
 $code = $_GET['code'];
 
-addToLog( 'command: checkRegistrationCode. GET params:', $_GET );
+addToLog( 'command: checkRegistrationCode. GET params received:', $_GET );
 
 // get special registration codes, which aren't in salesforce
+logSection( 'Getting special registration codes' );
 $regCodes = getSpecialRegistrationCodes();
 // check if one of the codes matches, and return info
 if ( $code === $regCodes['individual-volunteer-distributors'] ) {
@@ -39,6 +40,7 @@ if ( $code === $regCodes['individual-volunteer-distributors'] ) {
 
 
 // check the submitted code against registration codes saved in sf
+logSection( 'Checking registration code in salesforce' );
 makeSalesforceRequestWithTokenExpirationCheck( function() use ($code) {
     $escapedCode = escapeSingleQuotes( $code );
     return getAllSalesforceQueryRecordsAsync( "SELECT Id from Account WHERE TAT_App_Registration_Code__c = '{$escapedCode}'" );
@@ -51,6 +53,7 @@ makeSalesforceRequestWithTokenExpirationCheck( function() use ($code) {
         throw new ExpectedException( $message );
     } else {
         // find the team coordinators associated with this Account
+        logSection( 'Finding team coordinators associated with this account' );
         $accountId = $records[0]->Id;
         return getTeamCoordinators( $accountId )->then( function($coordinators) use($accountId) {
             echo json_encode( (object)array(

@@ -15,7 +15,7 @@ require_once( '../api-support-functions.php' );
 $firebaseUid = verifyFirebaseLogin();
 $postData = getPOSTData();
 
-addToLog( 'command: createPreOutreachSurvey. POST data:', $postData );
+addToLog( 'command: createPreOutreachSurvey. POST data received:', $postData );
 
 // sanitize campaignId by removing quotes
 $postData->campaignId = str_replace( array("'", '"'), "", $postData->campaignId );
@@ -34,6 +34,7 @@ if ( isset($postData->locations) && sizeof($postData->locations) > 200 ) {
 getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postData, $firebaseUid) {
     return makeSalesforceRequestWithTokenExpirationCheck( function() use ($contactID, $postData) {
         // get details on the contact, so we can update the user's regular address fields if they are empty
+        logSection( 'Getting info on the Contact' );
         return salesforceAPIGetAsync(
             "sobjects/Contact/{$contactID}/",
             array( 'fields' => 'MailingAddress,FirstName,LastName' )
@@ -129,8 +130,10 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
                 )
             );
 
+            logSection( 'Creating new Task on volunteer Contact' );
             return createNewSFObject( $firebaseUid, 'sobjects/Task/', $eventData, 'WhoId')->then( function() use ($postData) {
                 // Send an email to the campaign owner. First get the owner of the campaign
+                logSection( 'Finding the owner of the campaign' );
                 return getAllSalesforceQueryRecordsAsync( "SELECT Username FROM User WHERE Id IN (SELECT OwnerId FROM Campaign WHERE Campaign.Id = '{$postData->campaignId}')" );
             })->then( function($records) use ($eventData) {
                 if ( sizeof($records) === 0 ) {
@@ -158,6 +161,7 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
                     ));
                 }
                 // send it
+                logSection( 'Creating new CampaignMembers to link team members to the campaign' );
                 return salesforceAPIPostAsync( 'composite/sobjects/', array(
                     'allOrNone' => false,
                     'records' => $campaignMembers
@@ -174,6 +178,7 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
             // for the related Opportunity, change the stage to "pledged"
             if ( sizeof($records) > 0 ) {
                 $patchData = array( 'StageName' => 'Pledged' );
+                logSection( 'Changing Opportunity stage to pledged' );
                 return salesforceAPIPatchAsync( 'sobjects/Opportunity/' . $records[0]->Id, $patchData );
             } else {
                 return true;

@@ -14,7 +14,7 @@ require_once( '../api-support-functions.php' );
 $firebaseUid = verifyFirebaseLogin();
 $postData = getPOSTData();
 
-addToLog( 'command: createPostOutreachReport. POST data:', $postData );
+addToLog( 'command: createPostOutreachReport. POST data received:', $postData );
 
 // sanitize outreachLocationId by removing quotes
 $postData->outreachLocationId = str_replace( array("'", '"'), "", $postData->outreachLocationId );
@@ -38,6 +38,7 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
 
     return makeSalesforceRequestWithTokenExpirationCheck( function() use ($sfData, $postData, $contactID) {
         // modify the outreach location
+        logSection( 'Changing the given outreach location' );
         return salesforceAPIPatchAsync( 'sobjects/TAT_App_Outreach_Location__c/' . $postData->outreachLocationId, $sfData );
     })->then( function() use ($postData, $contactID) {
         // get outreach location info and volunteer Contact info
@@ -45,6 +46,7 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
         $locationFieldsString = implode( ',', $locationFields );
         $contactFields = array( 'FirstName', 'LastName' );
         $contactFieldsString = implode( ',', $contactFields );
+        logSection( 'Getting info on the outreach location and the volunteer\'s Contact entry' );
         return \React\Promise\all( array(
             salesforceAPIGetAsync( 'sobjects/TAT_App_Outreach_Location__c/' . $postData->outreachLocationId, array('fields' => $locationFieldsString) ),
             salesforceAPIGetAsync( 'sobjects/Contact/' . $contactID, array('fields' => $contactFieldsString) )
@@ -53,6 +55,7 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
         $outreachLocation = $responses[0];
         $volunteerContact = $responses[1];
         $volunteerName = $volunteerContact->FirstName . ' ' . $volunteerContact->LastName;
+
 
         return promiseToGetCampaignOwner( $outreachLocation->Campaign__c )->then( function($campaignOwner) use ($outreachLocation, $postData, $volunteerName) {
             // not all http calls depend on previous http calls. separate them into various 'threads' that can be performed simultaneously
@@ -94,6 +97,7 @@ $loop->run();
  * @return - a Promise which resolves with `true`
  */
 function promiseToChangeCampaignOpportunity( $campaignId, $numVolunteerHours ) {
+    logSection( 'Getting info on the Opportunity' );
     return getAllSalesforceQueryRecordsAsync(
         "SELECT Id, Hours_volunteered__c FROM Opportunity WHERE Volunteer_Event_Campaign__c = '{$campaignId}'"
     )->then( function($records) use ($numVolunteerHours) {
@@ -104,6 +108,7 @@ function promiseToChangeCampaignOpportunity( $campaignId, $numVolunteerHours ) {
                 'StageName' => 'Closed/Won',
                 'Hours_volunteered__c' => $currentHours + $numVolunteerHours
             );
+            logSection( 'Updating the Opportunity' );
             return salesforceAPIPatchAsync( 'sobjects/Opportunity/' . $records[0]->Id, $patchData );
         } else {
             return true;
@@ -122,6 +127,7 @@ function promiseToChangeCampaignOpportunity( $campaignId, $numVolunteerHours ) {
  */
 function promiseToMakeAccountAndContact( $postData, $outreachLocation, $campaignOwnerId ) {
     // search to see if this account already exists.
+    logSection( 'Searching to see if an Account already exists for the outreach location' );
     return getAllSalesforceQueryRecordsAsync( sprintf(
         "SELECT Id FROM Account WHERE Name = '%s' AND BillingState = '%s' AND BillingCity = '%s' AND BillingStreet = '%s'",
         escapeSingleQuotes($outreachLocation->Name),
@@ -155,6 +161,7 @@ function promiseToMakeAccountAndContact( $postData, $outreachLocation, $campaign
             'BillingState' => $outreachLocation->State__c,
             'BillingPostalCode' => $outreachLocation->Zip__c
         );
+        logSection( 'Creating a new Account' );
         return salesforceAPIPostAsync( 'sobjects/Account', $fields )->then( function($newAccount) {
             return $newAccount->id;
         });
@@ -185,8 +192,10 @@ function promiseToMakeAccountAndContact( $postData, $outreachLocation, $campaign
             $fields['npe01__WorkPhone__c'] = $postData->contactPhone;
         }
 
+        logSection( 'Updating some info on the volunteer\'s Contact' );
         return salesforceAPIPostAsync( 'sobjects/Contact', $fields )->then( function($newContact) use ($accountId) {
             // edit the Account to have the Contact we just created as the primary contact
+            logSection( 'Updating the Account to add info regarding the primary contact' );
             return salesforceAPIPatchAsync(
                 'sobjects/Account/' . $accountId, array('npe01__One2OneContact__c' => $newContact->id)
             )->then( function() use ($accountId, $newContact) {
@@ -206,6 +215,7 @@ function promiseToMakeAccountAndContact( $postData, $outreachLocation, $campaign
  * @return - a Promise which resolves with an object that has properties `Username` and `Id`. The "username" is actually an email address.
  */
 function promiseToGetCampaignOwner( $campaignId ) {
+    logSection( 'Getting owner of campaign' );
     return getAllSalesforceQueryRecordsAsync(
         "SELECT Username, Id FROM User WHERE Id IN (SELECT OwnerId FROM Campaign WHERE Campaign.Id = '{$campaignId}')"
     )->then( function($records) {
@@ -302,6 +312,7 @@ function promiseToCreateOpportunities( $accountId, $contactId, $volunteerName, $
 
 
     if ( sizeof($newOpps) > 0 ) {
+        logSection( 'Creating new Opportunities' );
         return salesforceAPIPostAsync( 'composite/sobjects/', array(
             'allOrNone' => true,
             'records' => $newOpps

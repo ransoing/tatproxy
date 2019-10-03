@@ -14,7 +14,7 @@ require_once( '../api-support-functions.php' );
 $firebaseUid = verifyFirebaseLogin();
 $postData = getPOSTData();
 
-addToLog( 'command: createNewUser. POST data:', $postData );
+addToLog( 'command: createNewUser. POST data received:', $postData );
 
 // map POST data to salesforce fields
 if ( !isset($postData->trainingVideoRequiredForTeam) ) {
@@ -46,10 +46,12 @@ if ( empty($postData->salesforceId) ) {
 $code = $postData->registrationCode;
 makeSalesforceRequestWithTokenExpirationCheck( function() use ($code, $sfData) {
     // verify the registration code
+    logSection( 'Verifying the registration code' );
     $escapedCode = escapeSingleQuotes( $code );
     return getAllSalesforceQueryRecordsAsync( "SELECT Id from Account WHERE TAT_App_Registration_Code__c = '{$escapedCode}'" )->then( function($records) use ($code, $sfData) {
 
         // get special registration codes, which aren't in salesforce
+        logSection( 'Getting special registration codes' );
         $regCodes = getSpecialRegistrationCodes();
 
         if ( $regCodes['individual-volunteer-distributors'] === $code ) {
@@ -73,6 +75,8 @@ makeSalesforceRequestWithTokenExpirationCheck( function() use ($code, $sfData) {
     });
 })->then( function($sfData) use ($postData, $firebaseUid) {
     // verify that no Contact in salesforce has the given firebaseUid
+    logSection( '' );
+    addToLog( 'Checking if any Contact has the given firebaseUid' );
     $promiseToCheckFirebaseUid = getSalesforceContactID( $firebaseUid )->then(
         function() {
             // we got a ContactID, which means this firebase user already has a salesforce entry! We shouldn't let the user proceed.
@@ -98,6 +102,7 @@ makeSalesforceRequestWithTokenExpirationCheck( function() use ($code, $sfData) {
         // either the user is a team coordinator, or is an individual volunteer of some kind. Require the video
         $promiseToFindVideoRequirement = new \React\Promise\FulfilledPromise( true );
     } else {
+        addToLog( 'Checking whether this user will need to watch the training video' );
         $promiseToFindVideoRequirement = getAllSalesforceQueryRecordsAsync(
             "SELECT TAT_App_Team_Must_Watch_Training_Video__c from Contact WHERE Id = '{$postData->coordinatorId}'"
         )->then( function($records) {
@@ -120,10 +125,12 @@ makeSalesforceRequestWithTokenExpirationCheck( function() use ($code, $sfData) {
         }
         if ( empty($postData->salesforceId) ) {
             // create a new Contact object
+            logSection( 'Creating new Contact object' );
             return salesforceAPIPostAsync( 'sobjects/Contact/', $sfData );
         } else {
             // update an existing contact object
             // first, get details on the Contact -- if there is no email or phone, add data to those fields
+            logSection( 'Getting details on existing Contact object that matches the given email/phone' );
             return salesforceAPIGetAsync(
                 "sobjects/Contact/{$postData->salesforceId}/",
                 array( 'fields' => 'npe01__HomeEmail__c, HomePhone, npe01__Preferred_Email__c, npe01__PreferredPhone__c' )
@@ -141,6 +148,7 @@ makeSalesforceRequestWithTokenExpirationCheck( function() use ($code, $sfData) {
                     $sfData['npe01__PreferredPhone__c'] = 'Household';
                 }
                 // update the Contact
+                logSection( 'Updating the existing Contact object' );
                 return salesforceAPIPatchAsync( "sobjects/Contact/{$postData->salesforceId}/", $sfData );
             });
         }
@@ -155,6 +163,7 @@ makeSalesforceRequestWithTokenExpirationCheck( function() use ($code, $sfData) {
         // if the user is a volunteer distributor, add to the volunteer distributor campaign
         if ( $sfData['TAT_App_Volunteer_Type__c'] === 'volunteerDistributor' ) {
             // create a CampaignMember linking the contact to the campaign at 701o000000020AUAAY
+            logSection( 'Adding the Contact to the volunteer distributor campaign' );
             $distributorCampaignId = '701o000000020AUAAY';
             return salesforceAPIPostAsync( 'sobjects/CampaignMember/', array(
                 'CampaignId' => $distributorCampaignId,

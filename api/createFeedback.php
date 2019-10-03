@@ -15,7 +15,7 @@ $firebaseUid = verifyFirebaseLogin();
 $postData = getPOSTData();
 $now = date('c');
 
-addToLog( 'command: createFeedback. POST data:', $postData );
+addToLog( 'command: createFeedback. POST data received:', $postData );
 
 // map POST data to salesforce fields
 
@@ -33,6 +33,7 @@ if ( isset($postData->campaignId) && !empty($postData->campaignId) ) {
     $sfData['Campaign__c'] = $postData->campaignId;
 }
 
+logSection( 'Creating Feedback object in salesforce' );
 createNewSFObject( $firebaseUid, 'sobjects/TAT_App_Feedback__c/', $sfData, 'Volunteer__c' )->then(
     function( $response ) {
         // new id is $response->id

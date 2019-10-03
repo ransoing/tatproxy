@@ -10,7 +10,7 @@
 require_once( '../functions.php' );
 require_once( '../api-support-functions.php' );
 
-addToLog( 'command: getUserData. GET params:', $_GET );
+addToLog( 'command: getUserData. GET params received:', $_GET );
 
 // Define functions used by this API call.
 // Each function directly maps to an API call or API option.
