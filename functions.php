@@ -7,6 +7,9 @@ require_once( __DIR__ . '/vendor/autoload.php' );
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
+use Kreait\Firebase;
+use Kreait\Firebase\Messaging\CloudMessage;
+use Kreait\Firebase\Messaging\Notification;
 
 // $salesforceOAuthBase = 'https://login.salesforce.com/services/oauth2';// @@
 $salesforceOAuthBase = 'https://test.salesforce.com/services/oauth2';
@@ -351,4 +354,28 @@ function salesforceAPIGet( $urlSegment, $data = array(), $allowRefreshAuthToken 
 	}
 
 	return $response;
+}
+
+
+$firebaseMessaging;
+$gServiceAccountCredentialsFilepath = __DIR__ . '/google-service-account.json';
+
+function sendNotification( $title, $body, $data, $fcmDeviceTokens ) {
+	global $firebaseMessaging, $gServiceAccountCredentialsFilepath;
+	if ( !isset($firebaseMessaging) ) {
+		// authenticate as the firebase service account
+		$firebaseServiceAccount = Firebase\ServiceAccount::fromJsonFile( $gServiceAccountCredentialsFilepath );
+		$firebaseMessaging = (new Firebase\Factory)->withServiceAccount( $firebaseServiceAccount )->createMessaging();
+	}
+	$message = CloudMessage::new()
+		->withNotification( Notification::create( $title, $body ) )
+		->withData( array(
+			'notification_foreground' => true,
+			'data' => json_encode( $data )
+		));
+	// sendMulticast can do up to 100 individual devices at a time, so we need to break up the list of devices into chunks of 100
+	$fcmChunks = array_chunk( $fcmDeviceTokens, 100 );
+	foreach( $fcmChunks as $fcmChunk ) {
+		$firebaseMessaging->sendMulticast( $message, $fcmChunk );
+	}
 }

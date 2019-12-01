@@ -138,6 +138,8 @@ require_once( 'api-support-functions.php' );
 			<li><a href="#createPreOutreachSurvey">createPreOutreachSurvey</a></li>
 			<li><a href="#createPostOutreachReport">createPostOutreachReport</a></li>
 			<li><a href="#deleteOutreachLocation">deleteOutreachLocation</a></li>
+			<li><a href="#updateNotificationPreferences">updateNotificationPreferences</a></li>
+			<li><a href="#unregisterFcmToken">unregisterFcmToken</a></li>
 		</ul>
 
 		<!-- ==================================== -->
@@ -475,18 +477,26 @@ Content-Type: application/json
     firstName: {string},
     lastName: {string},
     volunteerType: {string},
-	accountId: {string},
+    accountId: {string},
     hasWatchedTrainingVideo: {boolean},
-	trainingVideoLastWatchedDate: {string (ISO-8601 or YYYY-MM-DD)},
+    trainingVideoLastWatchedDate: {string (ISO-8601 or YYYY-MM-DD)},
     street: {string},
     city: {string},
     state: {string},
     zip: {string},
-	country: {string},
+    country: {string},
     isTeamCoordinator: {boolean},
     teamCoordinatorId: {string}, // ContactID of the salesforce object representing the user's team coordinator
-	isOnVolunteerTeam: {boolean},
-	trainingVideoRequiredForTeam: {boolean}
+    isOnVolunteerTeam: {boolean},
+    trainingVideoRequiredForTeam: {boolean}
+    notificationPreferences: {
+		[ fcmToken: string ]: {
+			language: {string},
+			preEventSurveyReminderEnabled: {boolean},
+			reportReminderEnabled: {boolean},
+			upcomingEventsReminderEnabled: {boolean}
+		}
+    }
 }</pre>
 
 		<p>
@@ -959,6 +969,114 @@ Content-Type: application/json
 {
     "firebaseIdToken": "abcd1234",
     "outreachLocationId": "IOJEHW8nEhehoh"
+}</pre>
+
+
+		<!-- ==================================== -->
+		<a name="updateNotificationPreferences"></a>
+		<h2>updateNotificationPreferences</h2>
+		<p><b>updateNotificationPreferences</b> associates an FCM (Firebase Cloud Messaging) token with a user, so that the device associated with the token will receive the user's notifications. This also updates preferences associated with that FCM token.</p>
+
+		<h3>Make a POST request to:</h3>
+		<pre>/api/updateNotificationPreferences</pre>
+
+		<h3>POST request body payload parameters</h3>
+		<div class="section-wrap">
+			<section>
+				<div>
+					<p><code>firebaseIdToken</code> {string} (required)</p>
+					<p>
+						<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
+						from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
+						login state, and access various Firebase resources.
+					</p>
+				</div>
+				<div>
+					<p><code>fcmToken</code> {string} (required)</p>
+					<p>The FCM token.</p>
+				</div>
+				<div>
+					<p><code>language</code> {string}</p>
+					<p>A language code, like <code>'en'</code> or <code>'es'</code>. This is the language that will be used when sending notifications to the device with the specified FCM token.</p>
+				</div>
+				<div>
+					<p><code>preEventSurveyReminderEnabled</code> {string}</p>
+					<p>Whether pre-event survey reminder notifications should be sent to the device with the specified FCM token.</p>
+				</div>
+				<div>
+					<p><code>reportReminderEnabled</code> {string}</p>
+					<p>Whether post-event or post-outreach report reminder notifications should be sent to the device with the specified FCM token.</p>
+				</div>
+				<div>
+					<p><code>upcomingEventsReminderEnabled</code> {string}</p>
+					<p>Whether reminders about upcoming events should be sent to the device with the specified FCM token.</p>
+				</div>
+			</section>
+		</div>
+		
+		<h3>Response payload</h3>
+		<pre>{
+    success: true
+}</pre>
+
+		<h3>Example request</h3>
+		<pre>// URL:
+POST /api/updateNotificationPreferences
+
+// Headers:
+Content-Type: application/json
+
+// Request body:
+{
+    "firebaseIdToken": "abcd1234",
+    "fcmToken": "IOJEHW8nEhehoh",
+    "language": "en",
+    "reportReminderEnabled": false
+}</pre>
+
+
+		<!-- ==================================== -->
+		<a name="unregisterFcmToken"></a>
+		<h2>unregisterFcmToken</h2>
+		<p><b>unregisterFcmToken</b> disassociates an FCM (Firebase Cloud Messaging) token from a user, so that any device associated with the token will no longer receive the user's notifications.</p>
+
+		<h3>Make a POST request to:</h3>
+		<pre>/api/unregisterFcmToken</pre>
+
+		<h3>POST request body payload parameters</h3>
+		<div class="section-wrap">
+			<section>
+				<div>
+					<p><code>firebaseIdToken</code> {string} (required)</p>
+					<p>
+						<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
+						from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
+						login state, and access various Firebase resources.
+					</p>
+				</div>
+				<div>
+					<p><code>fcmToken</code> {string} (required)</p>
+					<p>The FCM token.</p>
+				</div>
+			</section>
+		</div>
+		
+		<h3>Response payload</h3>
+		<pre>{
+    success: true
+}</pre>
+
+		<h3>Example request</h3>
+		<pre>// URL:
+POST /api/unregisterFcmToken
+
+// Headers:
+Content-Type: application/json
+
+// Request body:
+{
+    "firebaseIdToken": "abcd1234",
+    "fcmToken": "IOJEHW8nEhehoh"
 }</pre>
 
 

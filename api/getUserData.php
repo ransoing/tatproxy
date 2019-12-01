@@ -47,7 +47,8 @@ $apiFunctions['getUserData']['basic'] = function( $contactID ) {
         'TAT_App_Materials_Country__c',
         'TAT_App_Is_Team_Coordinator__c',
         'TAT_App_Team_Coordinator__c',
-        'TAT_App_Team_Must_Watch_Training_Video__c'
+        'TAT_App_Team_Must_Watch_Training_Video__c',
+        'TAT_App_Notification_Preferences__c'
     );
     return salesforceAPIGetAsync(
         "sobjects/Contact/${contactID}/",
@@ -70,7 +71,8 @@ $apiFunctions['getUserData']['basic'] = function( $contactID ) {
             'isOnVolunteerTeam' => $response->TAT_App_Is_Team_Coordinator__c || !empty( $response->TAT_App_Team_Coordinator__c ),
             'isTeamCoordinator' => $response->TAT_App_Is_Team_Coordinator__c,
             'teamCoordinatorId' => $response->TAT_App_Team_Coordinator__c,
-            'trainingVideoRequiredForTeam' => $response->TAT_App_Team_Must_Watch_Training_Video__c
+            'trainingVideoRequiredForTeam' => $response->TAT_App_Team_Must_Watch_Training_Video__c,
+            'notificationPreferences' => json_decode( $response->TAT_App_Notification_Preferences__c )
         );
     });
 };
