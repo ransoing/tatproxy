@@ -66,6 +66,51 @@ function sendMail( $to, $subject, $htmlBody, $debug = false ) {
 	}
 }
 
+// verify the presence of app resource files
+function resourceFilesAreSetUp() {
+	$dir = __DIR__ . '/external-resources';
+	$files = [ '/i18n/trx_en.json', '/i18n/trx_es.json', '/scripts/surveys.js', '/version' ];
+	foreach( $files as $file ) {
+		if ( !file_exists("{$dir}{$file}") ) {
+			return false;
+		}
+	}
+	return true;
+}
+
+// verify that things are set up for the notifications job to be run.
+function getNotificationStatus() {
+	// determine if the config has been set up right for notifications
+	$config = getConfig();
+	if ( empty($config) || empty($config->notifications ) || empty($config->notifications->cronSecret) ) {
+		return [
+			'error' => 'Cron secret not defined.',
+			'instructions' => 'Edit <code>config.json</code> on the server and add the cron secret string (see <code>config-sample.json</code> for proper formatting).'
+		];
+	}
+	// show an error if the notification job has never been run
+	$filepath = __DIR__ . '/notifications-last-run';
+	if ( !file_exists($filepath) ) {
+		return [
+			'error' => 'Notification job has not been run.',
+			'instructions' => 'Schedule a cron job to make a daily POST request to <code>https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] . 'run-notifications.php</code>.' .
+				'Use the cron secret string (defined in <code>config.json</code>) as the POST body.'
+		];
+	}
+	// show an error if it's been more than 25 hours since the notification job was last run
+	$hoursDiff = round( ( time() - intval( file_get_contents($filepath) ) ) / 3600 );
+	if ( $hoursDiff >= 25 ) {
+		return [
+			'error' => 'Notification job stopped running.',
+			'instructions' => 'It has been ' . $hoursDiff . ' hours since the notification job last ran. Check that the cron job is running correctly.'
+		];
+	}
+	
+	return [
+		'error' => false
+	];
+}
+
 $noConfigInstructions = 'Copy <code>config-sample.json</code> as <code>config.json</code> on the server and replace the sample values with real ones.';
 
 // Statuses for firebase connection

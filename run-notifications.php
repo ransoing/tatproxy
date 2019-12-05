@@ -4,11 +4,24 @@ require_once( './functions.php' );
 require_once( './api-support-functions.php' );
 
 /**
- * This file should be run once daily via cron. It sends notifications to devices, to remind
- * users to fill out reports.
+ * This file should be run once daily via cron. It sends notifications to devices, to remind users to fill out reports.
+ * It can be run via a POST request, if the POST body contains a secret string, defined in config.json:notifications.cronSecret
+ * This is for security, so that an anonymous person can't hit this URL repeatedly, spamming devices with notifications.
  */
 
 logSection( 'Running notifications job' );
+
+// the cronSecret is sent via POST, just as a simple string.
+$sentSecret = file_get_contents( 'php://input' );
+// check it against the saved secret
+$config = getConfig();
+if ( $sentSecret !== $config->notifications->cronSecret ) {
+    echo 'You must send a valid secret via POST in order to run the notifications job.';
+    return;
+}
+
+// save the time this job was run
+file_put_contents( __DIR__ . '/notifications-last-run', time() );
 
 // open translation files
 $languages = (object) array (

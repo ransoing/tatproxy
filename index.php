@@ -103,6 +103,31 @@ require_once( 'api-support-functions.php' );
 		</div>
 	</section>
 
+	<section>
+		<header><img src="assets/external-resources-icon.png"> App resource files</header>
+		<div>
+			<?php if ( !resourceFilesAreSetUp() ) : ?>
+				<p class="status error">App resources not found (translation and survey files).</p>
+				<p>Build the app and copy the contents of <code>external/dist/</code> to <code>external-resources/</code> on the server.</p>
+			<?php else: ?>
+				<p class="status ok">Installed.</p>
+			<?php endif; ?>
+		</div>
+	</section>
+
+	<section>
+		<header><img src="assets/notification-icon.png"> Notification job</header>
+		<div>
+			<?php $notificationStatus = getNotificationStatus() ?>
+			<?php if ( $notificationStatus['error'] ) : ?>
+				<p class="status error"><?php echo $notificationStatus['error'] ?></p>
+				<p><?php echo $notificationStatus['instructions'] ?></p>
+			<?php else: ?>
+				<p class="status ok">Configured.</p>
+			<?php endif; ?>
+		</div>
+	</section>
+
 	<hr>
 
 	<div class="api-docs">

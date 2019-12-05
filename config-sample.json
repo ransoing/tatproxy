@@ -17,5 +17,8 @@
         "port": 587,
         "replyTo": "somebody_else@example.com"
     },
+    "notifications": {
+        "cronSecret": "abcdefghijk12345"
+    },
     "sendErrorsTo": [ "somebody@example.com", "somebody.else@example.com" ]
 }

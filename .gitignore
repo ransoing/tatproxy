@@ -3,6 +3,7 @@ sf-auth.json
 contact-ids.json
 contact-ids.sqlite
 google-service-account.json
+notifications-last-run
 vendor/
 external-resources/
 
