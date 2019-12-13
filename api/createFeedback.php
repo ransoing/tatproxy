@@ -18,15 +18,12 @@ $now = date('c');
 addToLog( 'command: createFeedback. POST data received:', $postData );
 
 // map POST data to salesforce fields
-
 $sfData = array(
-    'Description__c' => formatQAs(
-        array( 'What advice would you give another volunteer?', $postData->advice ),
-        array( 'What was the best part of your experience?', $postData->bestPart ),
-        array( 'What could have been improved about your experience?', $postData->improvements ),
-        array( 'Do you give permission for TAT to anonymously quote you on social media or in reports?', $postData->givesAnonPermission ? 'Yes' : 'No' ),
-        array( 'Do you give permission for TAT to use your name, organization, and quotes on social media and in reports?', $postData->givesNamePermission ? 'Yes' : 'No' )
-    )
+    'Advice__c' => $postData->advice,
+    'Best_Part__c' => $postData->bestPart,
+    'Improvements__c' => $postData->improvements,
+    'Gives_Anonymous_Permission__c' => $postData->givesAnonPermission,
+    'Gives_Named_Permission__c' => $postData->givesNamePermission
 );
 
 if ( isset($postData->campaignId) && !empty($postData->campaignId) ) {
