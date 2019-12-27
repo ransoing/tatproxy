@@ -162,9 +162,14 @@ makeSalesforceRequestWithTokenExpirationCheck( function() use ($code, $sfData) {
         
         // if the user is a volunteer distributor, add to the volunteer distributor campaign
         if ( $sfData['TAT_App_Volunteer_Type__c'] === 'volunteerDistributor' ) {
-            // create a CampaignMember linking the contact to the campaign at 701o000000020AUAAY
+            // create a CampaignMember linking the contact to the distributor campaign
             logSection( 'Adding the Contact to the volunteer distributor campaign' );
-            $distributorCampaignId = '701o000000020AUAAY';
+            $config = getConfig();
+            $distributorCampaignId = $config->distributorCampaignId;
+            if ( empty($distributorCampaignId) ) {
+                // no campaign. Don't try to add a Contact to a non-existent campaign.
+                return true;
+            }
             return salesforceAPIPostAsync( 'sobjects/CampaignMember/', array(
                 'CampaignId' => $distributorCampaignId,
                 'ContactId' => $contactId

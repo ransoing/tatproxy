@@ -20,5 +20,6 @@
     "notifications": {
         "cronSecret": "abcdefghijk12345"
     },
+    "distributorCampaignId": "Salesforce object ID of the distributor campaign",
     "sendErrorsTo": [ "somebody@example.com", "somebody.else@example.com" ]
 }
