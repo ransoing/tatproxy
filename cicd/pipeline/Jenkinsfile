@@ -1,7 +1,7 @@
 #!/usr/bin/groovy
 
 pipeline {
-    agent any
+    agent { label 'nodejs' }
 
     stages {
         stage('Build') {
@@ -17,9 +17,10 @@ pipeline {
         stage('Deploy') {
             steps {
                 script {
-                    openshift.raw("new-app --name pacman --docker-image quay.io/ifont/pacman-nodejs-app:latest")
-
-                    //openshift.raw("apply -f cicd/application")
+                    openshift.withCluster() {
+                        openshift.raw("new-app --name pacman --docker-image quay.io/ifont/pacman-nodejs-app:latest")
+                        //openshift.raw("apply -f cicd/application")
+                    }
                 }
             }
         }
