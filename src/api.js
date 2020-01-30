@@ -42,3 +42,23 @@ app.get(
     res.send(responseBody);
   }
 );
+
+app.get(
+  '/api/createFeedback',
+  validator(
+    Joi.object({
+      email: Joi.string()
+        .email()
+        .required(),
+      phone: Joi.string().required()
+    })
+  ),
+  (req, res) => {
+    const { email, phone } = req.body;
+    // TODO
+    const responseBody = {
+      salesforceId: ''
+    };
+    res.send(responseBody);
+  }
+);
