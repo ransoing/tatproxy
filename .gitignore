@@ -103,3 +103,6 @@ typings/
 
 # ansible retry files
 *.retry
+
+# python virtualenv
+venv/

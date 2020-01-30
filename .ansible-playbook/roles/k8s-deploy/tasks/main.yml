@@ -1,0 +1,23 @@
+---
+# tasks file for jenkins
+- name: Ansible check file exists example.
+  stat:
+    path: "{{ source_dir }}"
+  register: file_details
+- name: Fail if source_dir does not exist
+  fail:
+    msg: "source_dir is required but could not be detected due to previous errors."
+  when: not file_details.stat.exists  
+- name: Discover deployment files
+  find:
+    paths: "{{ source_dir }}"
+    patterns: "*.yml,*.yaml"
+  register: manifests
+  notify: Print manifests.files
+- name: Apply Objects
+  k8s:
+    namespace: "{{ k8s_namespace }}"
+    state: present
+    src: "{{ item.path }}"
+  loop:
+    "{{ manifests.files }}"
