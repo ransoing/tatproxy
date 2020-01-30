@@ -10,3 +10,7 @@ external-resources/
 config.prod.json
 sf-auth.prod.json
 
+#Intellij
+.idea/
+*.iml
+
