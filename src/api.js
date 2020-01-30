@@ -44,6 +44,26 @@ module.exports = function(app) {
     }
   );
 
+  app.get(
+    '/api/getTeamCoordinators',
+    validator(
+      Joi.object({
+        accountId: Joi.string().required()
+      })
+    ),
+    (req, res) => {
+      const { email, phone } = req.body;
+      // TODO
+      const responseBody = [
+        {
+          name: '',
+          salesforceId: ''
+        }
+      ];
+      res.send(responseBody);
+    }
+  );
+
   app.post(
     '/api/createFeedback',
     validator(
