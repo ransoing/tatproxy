@@ -1,0 +1,7 @@
+- name: Install Kubernetes Objects
+  hosts: localhost
+  tasks:
+    - import_role:
+        name: k8s-deploy
+      vars:
+        k8s_namespace: tatproxy-ci-cd
