@@ -16,7 +16,11 @@ pipeline {
         }
         stage('Deploy') {
             steps {
-                echo 'Deploying....'
+                script {
+                    openshift.raw("new-app --name pacman --docker-image quay.io/ifont/pacman-nodejs-app:latest")
+
+                    //openshift.raw("apply -f cicd/application")
+                }
             }
         }
     }
