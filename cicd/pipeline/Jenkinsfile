@@ -1,0 +1,27 @@
+#!/usr/bin/groovy
+
+pipeline {
+    agent any
+
+    stages {
+        stage('Build') {
+            steps {
+                echo 'Building..'
+            }
+        }
+        stage('Test') {
+            steps {
+                echo 'Testing..'
+            }
+        }
+        stage('Deploy') {
+            steps {
+                script {
+                    openshift.raw("new-app --name pacman --docker-image quay.io/ifont/pacman-nodejs-app:latest")
+
+                    //openshift.raw("apply -f cicd/application")
+                }
+            }
+        }
+    }
+}
