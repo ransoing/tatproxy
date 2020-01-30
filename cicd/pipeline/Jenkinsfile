@@ -1,11 +1,14 @@
 #!/usr/bin/groovy
 
 pipeline {
-    agent {
-      node {
-        label 'nodejs'
-      }
-    }
+      // Default jenkins image seems to have a problem with agents - may be related to the kubernetes plugin?
+//    agent {
+//      node {
+//        label 'nodejs'
+//      }
+//    }
+    agent any
+
 
     options {
       timeout(time: 60, unit: 'MINUTES')
