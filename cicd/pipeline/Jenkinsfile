@@ -3,6 +3,10 @@
 pipeline {
     agent { label 'nodejs' }
 
+    options {
+      timeout(time: 60, unit: 'MINUTES')
+    }
+
     stages {
         stage('Build') {
             steps {
