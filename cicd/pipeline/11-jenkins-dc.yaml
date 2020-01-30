@@ -94,9 +94,7 @@ spec:
             - name: jenkins-data
               mountPath: /var/lib/jenkins
             - name: tatproxysecret-vol
-              secret:
-                secretName: tatproxyfilesecret
-                defaultMode: 420
+              mountPath: /opt/tatproxy/secure
           terminationMessagePolicy: File
           image: >-
             image-registry.openshift-image-registry.svc:5000/openshift/jenkins@sha256:e4ac7e0f7b1282b92cc6463a4aa98f77e82e973797cf394cef651bf8f67d2258
@@ -105,4 +103,8 @@ spec:
         - name: jenkins-data
           persistentVolumeClaim:
             claimName: jenkins
+        - name: tatproxysecret-vol
+          secret:
+            secretName: tatproxyfilesecret
+            defaultMode: 420
       dnsPolicy: ClusterFirst
