@@ -52,12 +52,80 @@ module.exports = function(app) {
       })
     ),
     (req, res) => {
-      const { email, phone } = req.body;
+      const { accountId } = req.body;
       // TODO
       const responseBody = [
         {
           name: '',
           salesforceId: ''
+        }
+      ];
+      res.send(responseBody);
+    }
+  );
+
+  app.post(
+    '/api/createNewUser',
+    validator(
+      Joi.object({
+        firebaseIdToken: Joi.string().required(),
+        registrationCode: Joi.string().required(),
+        salesforceId: Joi.string(),
+        email: Joi.string().email(),
+        phone: Joi.string().phone(),
+        firstName: Joi.string(),
+        lastName: Joi.string(),
+        isCoordinator: Joi.boolean(),
+        coordinatorId: Joi.string(),
+        trainingVideoRequiredForTeam: Joi.boolean()
+      })
+    ),
+    (req, res) => {
+      const {
+        firebaseIdToken,
+        registrationCode,
+        salesforceId,
+        email,
+        phone,
+        firstName,
+        lastName,
+        isCoordinator,
+        coordinatorId,
+        trainingVideoRequiredForTeam
+      } = req.body;
+      // TODO
+      const responseBody = [
+        {
+          contactId: ''
+        }
+      ];
+      res.send(responseBody);
+    }
+  );
+
+  app.post(
+    '/api/updateUser',
+    validator(
+      Joi.object({
+        firebaseIdToken: Joi.string().required(),
+        isCoordinator: Joi.boolean(),
+        hasWatchedTrainingVideo: Joi.boolean(),
+        trainingVideoLastWatchedDate: Joi.date().format('YYYY-MM-DD'),
+        trainingVideoRequiredForTeam: Joi.boolean()
+      })
+    ),
+    (req, res) => {
+      const {
+        firebaseIdToken,
+        isCoordinator,
+        hasWatchedTrainingVideo,
+        trainingVideoLastWatchedDate,
+        trainingVideoRequiredForTeam
+      } = req.body;
+      // TODO
+      const responseBody = [
+        {
+          success: true
         }
       ];
       res.send(responseBody);
