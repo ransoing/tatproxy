@@ -3,7 +3,7 @@
 pipeline {
     agent {
       node {
-        label 'ose-jenkins-agent-nodejs'
+        label 'nodejs'
       }
     }
 
