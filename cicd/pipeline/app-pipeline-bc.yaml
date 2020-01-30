@@ -1,0 +1,31 @@
+kind: BuildConfig
+apiVersion: build.openshift.io/v1
+metadata:
+  name: tatproxy-pipeline
+  labels:
+    template: s2i-app-build-with-secret-template
+    type: pipeline
+spec:
+  nodeSelector: {}
+  output: {}
+  resources: {}
+  successfulBuildsHistoryLimit: 5
+  failedBuildsHistoryLimit: 5
+  strategy:
+    type: JenkinsPipeline
+    jenkinsPipelineStrategy:
+      jenkinsfilePath: cicd/pipeline/Jenkinsfile
+  postCommit: {}
+  source:
+    type: Git
+    git:
+      uri: 'https://github.com/npruis/tatproxy.git'
+      ref: master
+    sourceSecret:
+      name: github
+  triggers:
+    - type: "GitHub"
+      github:
+        secretReference:
+          name: "github"
+  runPolicy: Serial
