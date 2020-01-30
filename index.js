@@ -1,6 +1,9 @@
 const express = require('express');
-const cors = require('cors')
-const bodyParser = require('body-parser')
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const validator = require('./src/validator');
+const Joi = require('@hapi/joi');
+
 const app = express();
 
 const corsOptions = {
@@ -17,9 +20,23 @@ app.options('*', cors());
 
 app.set('port', process.env.PORT || 8000);
 
-app.get('/ping', function(req, res) {
-  res.send('pong');
-});
+app.post(
+  '/ping',
+  validator(
+    Joi.object({
+      username: Joi.string()
+        .alphanum()
+        .min(3)
+        .max(30)
+        .required()
+    })
+  ),
+  function(req, res) {
+    const { username } = req.body;
+    console.log(username);
+    res.send(`pong ${username}`);
+  }
+);
 
 app.listen(app.get('port'), function() {
   console.log('App started at: %s on port: %s', new Date(), app.get('port'));
