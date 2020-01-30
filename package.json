@@ -1,0 +1,22 @@
+{
+  "name": "tatproxy-node",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "watch": "",
+    "test": "jest"
+  },
+  "author": "",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "dependencies": {
+    "axios": "^0.19.2",
+    "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "jest": "^25.1.0",
+    "nodemon": "^2.0.2",
+    "prettier": "^1.19.1"
+  }
+}
