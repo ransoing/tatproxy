@@ -65,4 +65,87 @@ module.exports = function(app) {
       res.send(responseBody);
     }
   );
+
+  app.post(
+    '/api/deleteOutreachLocation',
+    validator(
+      Joi.object({
+        firebaseIdToken: Joi.string()
+          .firebaseIdToken()
+          .required(),
+        outreachLocationId: Joi.string().required()
+      }),
+      true
+    ),
+    (req, res) => {
+      const { firebaseIdToken, outreachLocationId } = req.body;
+
+      //TODO
+      const responseBody = {
+        success: true
+      };
+
+      res.send(responseBody);
+    }
+  );
+
+  app.post(
+    '/api/updateNotificationPreferences',
+    validator(
+      Joi.object({
+        firebaseIdToken: Joi.string()
+          .firebaseIdToken()
+          .required(),
+        fcmToken: Joi.string()
+          .fcmToken()
+          .required(),
+        language: Joi.string(),
+        preEventSurveyReminderEnabled: Joi.string(),
+        reportReminderEnabled: Joi.string(),
+        upcomingEventsReminderEnabled: Joi.string()
+      }),
+      true
+    ),
+    (req, res) => {
+      const {
+        firebaseIdToken,
+        fcmToken,
+        language,
+        preEventSurveyReminderEnabled,
+        reportReminderEnabled,
+        upcomingEventsReminderEnabled
+      } = req.body;
+
+      //TODO
+      const responseBody = {
+        success: true
+      };
+
+      res.send(responseBody);
+    }
+  );
+  app.post(
+    '/api/unregisterFcmToken',
+    validator(
+      Joi.object({
+        firebaseIdToken: Joi.string()
+          .firebaseIdToken()
+          .required(),
+        fcmToken: Joi.string()
+          .fcmToken()
+          .required()
+      }),
+      true
+    ),
+    (req, res) => {
+      const { firebaseIdToken, fcmToken } = req.body;
+
+      //TODO
+      const responseBody = {
+        success: true
+      };
+
+      res.send(responseBody);
+    }
+  );
 };
