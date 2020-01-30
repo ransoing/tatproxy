@@ -44,6 +44,157 @@ module.exports = function(app) {
     }
   );
 
+  app.get(
+    '/api/getTeamCoordinators',
+    validator(
+      Joi.object({
+        accountId: Joi.string().required()
+      })
+    ),
+    (req, res) => {
+      const { accountId } = req.body;
+      // TODO
+      const responseBody = [
+        {
+          name: '',
+          salesforceId: ''
+        }
+      ];
+      res.send(responseBody);
+    }
+  );
+
+  app.post(
+    '/api/createNewUser',
+    validator(
+      Joi.object({
+        firebaseIdToken: Joi.string().required(),
+        registrationCode: Joi.string().required(),
+        salesforceId: Joi.string(),
+        email: Joi.string().email(),
+        phone: Joi.string().phone(),
+        firstName: Joi.string(),
+        lastName: Joi.string(),
+        isCoordinator: Joi.boolean(),
+        coordinatorId: Joi.string(),
+        trainingVideoRequiredForTeam: Joi.boolean()
+      })
+    ),
+    (req, res) => {
+      const {
+        firebaseIdToken,
+        registrationCode,
+        salesforceId,
+        email,
+        phone,
+        firstName,
+        lastName,
+        isCoordinator,
+        coordinatorId,
+        trainingVideoRequiredForTeam
+      } = req.body;
+      // TODO
+      const responseBody = [
+        {
+          contactId: ''
+        }
+      ];
+      res.send(responseBody);
+    }
+  );
+
+  app.post(
+    '/api/updateUser',
+    validator(
+      Joi.object({
+        firebaseIdToken: Joi.string().required(),
+        isCoordinator: Joi.boolean(),
+        hasWatchedTrainingVideo: Joi.boolean(),
+        trainingVideoLastWatchedDate: Joi.date().format('YYYY-MM-DD'),
+        trainingVideoRequiredForTeam: Joi.boolean()
+      })
+    ),
+    (req, res) => {
+      const {
+        firebaseIdToken,
+        isCoordinator,
+        hasWatchedTrainingVideo,
+        trainingVideoLastWatchedDate,
+        trainingVideoRequiredForTeam
+      } = req.body;
+      // TODO
+      const responseBody = [
+        {
+          success: true
+        }
+      ];
+      res.send(responseBody);
+    }
+  );
+
+  app.post(
+    '/api/getUserData',
+    validator(
+      Joi.object({
+        firebaseIdToken: Joi.string().required()
+      })
+    ),
+    (req, res) => {
+      const { firebaseIdToken } = req.body;
+      // TODO
+      const responseBody = [
+        {
+          salesforceId: '',
+          firstName: '',
+          lastName: '',
+          volunteerType: '',
+          accountId: '',
+          hasWatchedTrainingVideo: false,
+          trainingVideoLastWatchedDate: '2020-01-01',
+          street: '',
+          city: '',
+          state: '',
+          zip: '',
+          country: '',
+          isTeamCoordinator: false,
+          teamCoordinatorId: '',
+          isOnVolunteerTeam: false,
+          trainingVideoRequiredForTeam: false,
+          notificationPreferences: {
+            ['token']: {
+              language: '',
+              preEventSurveyReminderEnabled: false,
+              reportReminderEnabled: false,
+              upcomingEventsReminderEnabled: false
+            }
+          }
+        }
+      ];
+      res.send(responseBody);
+    }
+  );
+
+  app.post(
+    '/api/getCampaigns',
+    validator(
+      Joi.object({
+        firebaseIdToken: Joi.string().required()
+      })
+    ),
+    (req, res) => {
+      const { firebaseIdToken } = req.body;
+      // TODO
+      const responseBody = [
+        {
+          name: '',
+          salesforceId: '',
+          daysSinceCreated: '1'
+        }
+      ];
+      res.send(responseBody);
+    }
+  );
+
   app.post(
     '/api/createFeedback',
     validator(
@@ -62,6 +213,89 @@ module.exports = function(app) {
       const responseBody = {
         success: true
       };
+      res.send(responseBody);
+    }
+  );
+
+  app.post(
+    '/api/deleteOutreachLocation',
+    validator(
+      Joi.object({
+        firebaseIdToken: Joi.string()
+          .firebaseIdToken()
+          .required(),
+        outreachLocationId: Joi.string().required()
+      }),
+      true
+    ),
+    (req, res) => {
+      const { firebaseIdToken, outreachLocationId } = req.body;
+
+      //TODO
+      const responseBody = {
+        success: true
+      };
+
+      res.send(responseBody);
+    }
+  );
+
+  app.post(
+    '/api/updateNotificationPreferences',
+    validator(
+      Joi.object({
+        firebaseIdToken: Joi.string()
+          .firebaseIdToken()
+          .required(),
+        fcmToken: Joi.string()
+          .fcmToken()
+          .required(),
+        language: Joi.string(),
+        preEventSurveyReminderEnabled: Joi.string(),
+        reportReminderEnabled: Joi.string(),
+        upcomingEventsReminderEnabled: Joi.string()
+      }),
+      true
+    ),
+    (req, res) => {
+      const {
+        firebaseIdToken,
+        fcmToken,
+        language,
+        preEventSurveyReminderEnabled,
+        reportReminderEnabled,
+        upcomingEventsReminderEnabled
+      } = req.body;
+
+      //TODO
+      const responseBody = {
+        success: true
+      };
+
+      res.send(responseBody);
+    }
+  );
+  app.post(
+    '/api/unregisterFcmToken',
+    validator(
+      Joi.object({
+        firebaseIdToken: Joi.string()
+          .firebaseIdToken()
+          .required(),
+        fcmToken: Joi.string()
+          .fcmToken()
+          .required()
+      }),
+      true
+    ),
+    (req, res) => {
+      const { firebaseIdToken, fcmToken } = req.body;
+
+      //TODO
+      const responseBody = {
+        success: true
+      };
+
       res.send(responseBody);
     }
   );
