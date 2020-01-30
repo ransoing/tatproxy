@@ -1,7 +1,11 @@
 #!/usr/bin/groovy
 
 pipeline {
-    agent { label 'nodejs' }
+    agent {
+      node {
+        label 'nodejs'
+      }
+    }
 
     options {
       timeout(time: 60, unit: 'MINUTES')
