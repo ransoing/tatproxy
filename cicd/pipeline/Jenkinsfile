@@ -1,8 +1,7 @@
 #!/usr/bin/groovy
 
 pipeline {
-
-    options {}
+    agent { label 'trucker' }
 
     stages {
         stage('Build') {
