@@ -1,7 +1,9 @@
 const express = require('express');
+const cors = require('cors')
+const bodyParser = require('body-parser')
 const app = express();
 
-const corsOptions: cors.CorsOptions = {
+const corsOptions = {
   origin: true,
   optionsSuccessStatus: 200
 };
