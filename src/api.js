@@ -44,7 +44,22 @@ module.exports = function(app) {
     }
   );
 
-  app.get(
+  app.get(createdRoutes
+    '/api/contactSearch',
+    validator(
+      Joi.object({
+        email: Joi.string()
+          .email()
+          .required(),
+        phone: Joi.string().required()
+      })
+    ),
+    (req, res) => {
+      const { email, phone } = req.body;
+      // TODO
+      const responseBody = {
+        salesforceId: ''
+      };
     '/api/getTeamCoordinators',
     validator(
       Joi.object({
@@ -209,6 +224,54 @@ module.exports = function(app) {
       })
     ),
     (req, res) => {
+      // TODO
+      const responseBody = {
+        success: true
+      };
+      res.send(responseBody);
+    }
+  );
+
+  app.post(
+    '/api/createPostOutreachReport',
+    validator(
+      Joi.object({
+        email: Joi.string()
+          .email()
+          .required(),
+        outreachLocationId: Joi.string()
+          .outreachLocationId()
+          .required(),
+        totalHours: Joi.number().required(),
+        completionDate: Joi.string(Joi.date().format('YYYY-MM-DD')).required(),
+        accomplishments: Joi.array()
+          .items(Joi.string())
+          .required(),
+        otherAccomplishments: Joi.string(),
+        contactFirstName: Joi.string().required(),
+        contactLastName: Joi.string().required(),
+        contactTitle: Joi.string().required(),
+        contactEmail: Joi.string(),
+        contactPhone: Joi.string().required(),
+        willFollowUp: Joi.boolean().required(),
+        followUpDate: Joi.string(Joi.date().format('YYYY-MM-DD'))
+      })
+    ),
+    (req, res) => {
+      const {
+        email,
+        outreachLocationId,
+        totalHours,
+        completionDate,
+        accomplishments,
+        otherAccomplishments,
+        contactFirstName,
+        contactLastName,
+        contactTitle,
+        contactEmail,
+        contactPhone,
+        followUpDate
+      } = req.body;
       // TODO
       const responseBody = {
         success: true
