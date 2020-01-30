@@ -44,21 +44,23 @@ module.exports = function(app) {
     }
   );
 
-  app.get(
+  app.post(
     '/api/createFeedback',
     validator(
       Joi.object({
-        email: Joi.string()
-          .email()
-          .required(),
-        phone: Joi.string().required()
+        firebaseIdToken: Joi.string().required(),
+        campaignId: Joi.string(),
+        advice: Joi.string(),
+        bestPart: Joi.string(),
+        improvements: Joi.string(),
+        givesAnonPermission: Joi.string().required(),
+        givesNamePermission: Joi.string().required()
       })
     ),
     (req, res) => {
-      const { email, phone } = req.body;
       // TODO
       const responseBody = {
-        salesforceId: ''
+        success: true
       };
       res.send(responseBody);
     }
