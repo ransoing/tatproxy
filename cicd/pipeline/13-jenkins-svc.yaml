@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.alpha.openshift.io/dependencies: '[{"name": "jenkins-jnlp",
+      "namespace": "", "kind": "Service"}]'
+    service.openshift.io/infrastructure: "true"
+  name: jenkins
+spec:
+  ports:
+    - name: web
+      nodePort: 0
+      port: 80
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    name: jenkins
+  sessionAffinity: None
+  type: ClusterIP

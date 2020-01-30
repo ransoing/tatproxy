@@ -1,0 +1,3 @@
+---
+# defaults file for jenkins
+k8s_namespace: tatproxy-cicd

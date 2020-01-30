@@ -20,23 +20,11 @@ app.options('*', cors());
 
 app.set('port', process.env.PORT || 8000);
 
-app.post(
-  '/ping',
-  validator(
-    Joi.object({
-      username: Joi.string()
-        .alphanum()
-        .min(3)
-        .max(30)
-        .required()
-    })
-  ),
-  function(req, res) {
-    const { username } = req.body;
-    console.log(username);
-    res.send(`pong ${username}`);
-  }
-);
+require('./src/api')(app);
+
+app.post('/ping', function(req, res) {
+  res.send('pong');
+});
 
 app.listen(app.get('port'), function() {
   console.log('App started at: %s on port: %s', new Date(), app.get('port'));
