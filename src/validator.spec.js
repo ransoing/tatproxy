@@ -1,3 +1,5 @@
+const Joi = require('@hapi/joi');
+
 describe('validation middleware', () => {
   let sut = require('./validator');
 
@@ -5,6 +7,7 @@ describe('validation middleware', () => {
     expect(typeof sut).toBe('function');
     expect(typeof sut()).toBe('function');
   });
+
   it('should validate based on a Joi schema', () => {
     const validatorMiddleware = sut(
       Joi.object({
