@@ -1,0 +1,39 @@
+#!/usr/bin/groovy
+
+pipeline {
+      // Default jenkins image seems to have a problem with agents - may be related to the kubernetes plugin?
+//    agent {
+//      node {
+//        label 'nodejs'
+//      }
+//    }
+    agent any
+
+
+    options {
+      timeout(time: 60, unit: 'MINUTES')
+    }
+
+    stages {
+        stage('Build') {
+            steps {
+                echo 'Building..'
+            }
+        }
+        stage('Test') {
+            steps {
+                echo 'Testing..'
+            }
+        }
+        stage('Deploy') {
+            steps {
+                script {
+                    openshift.withCluster() {
+                        openshift.raw("new-app --name pacman --docker-image quay.io/ifont/pacman-nodejs-app:latest")
+                        //openshift.raw("apply -f cicd/application")
+                    }
+                }
+            }
+        }
+    }
+}
