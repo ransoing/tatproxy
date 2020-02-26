@@ -24,7 +24,7 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) {
                 $endTime = strtotime( $campaign->EndDate );
                 $createdTime = strtotime( $campaign->CreatedDate );
                 $daysSinceCreated = round( (time() - $createdTime) / (60 * 60 * 24) );
-                if ( $endTime > time() && $campaign->IsActive ) {
+                if ( ($endTime === FALSE || $endTime > time()) && $campaign->IsActive ) {
                     array_push( $campaigns, array(
                         'salesforceId' => $campaign->Id,
                         'name' => $campaign->Name,

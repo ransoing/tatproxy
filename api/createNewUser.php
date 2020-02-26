@@ -160,8 +160,9 @@ makeSalesforceRequestWithTokenExpirationCheck( function() use ($code, $sfData) {
             'contactId' => $contactId
         ));
         
-        // if the user is a volunteer distributor, add to the volunteer distributor campaign
-        if ( $sfData['TAT_App_Volunteer_Type__c'] === 'volunteerDistributor' ) {
+        // if the user is an individual volunteer distributor, add to the volunteer distributor campaign
+        // the user is part of a group if they either are a coordinator, or they have a coordinator
+        if ( $sfData['TAT_App_Volunteer_Type__c'] === 'volunteerDistributor' && !$postData->isCoordinator && empty($postData->coordinatorId) ) {
             // create a CampaignMember linking the contact to the distributor campaign
             logSection( 'Adding the Contact to the volunteer distributor campaign' );
             $config = getConfig();
@@ -173,7 +174,14 @@ makeSalesforceRequestWithTokenExpirationCheck( function() use ($code, $sfData) {
             return salesforceAPIPostAsync( 'sobjects/CampaignMember/', array(
                 'CampaignId' => $distributorCampaignId,
                 'ContactId' => $contactId
-            ));
+            ))->otherwise( function($e) {
+                $body = getJsonBodyFromResponse( $e->getResponse() );
+                if ( is_array($body) && sizeof($body) > 0 && $body[0]->errorCode === 'DUPLICATE_VALUE' ) {
+                    // do nothing. This is fine. The user was already part of the campaign.
+                } else {
+                    throw $e;
+                }
+            });
         } else {
             return true;
         }
