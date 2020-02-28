@@ -162,6 +162,8 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
                 }
                 // send it
                 logSection( 'Creating new CampaignMembers to link team members to the campaign' );
+                // a call to `composite` always returns HTTP 200 as long as the request is a valid format, so it won't throw an error if
+                // contacts are already part of the campaign
                 return salesforceAPIPostAsync( 'composite/sobjects/', array(
                     'allOrNone' => false,
                     'records' => $campaignMembers

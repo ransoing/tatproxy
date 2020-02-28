@@ -33,58 +33,22 @@ if ( isset($postData->trainingVideoRequiredForTeam) ) {
 
 
 // Verify that the user has a Contact object
-getSalesforceContactID( $firebaseUid )->then( function($contactID) use($sfData, $postData) {
-    return makeSalesforceRequestWithTokenExpirationCheck( function() use ($contactID, $sfData) {
+getSalesforceContactID( $firebaseUid )->then( function($contactId) use($sfData, $postData) {
+    return makeSalesforceRequestWithTokenExpirationCheck( function() use ($contactId, $sfData) {
         logSection( 'Updating Contact with new info' );
-        return salesforceAPIPatchAsync( 'sobjects/Contact/' . $contactID, $sfData );
-    })->then( function() use ($contactID, $postData) {
+        return salesforceAPIPatchAsync( 'sobjects/Contact/' . $contactId, $sfData );
+    })->then( function() use ($contactId, $postData) {
         if ( !isset($postData->coordinatorId) ) {
             return true;
         }
 
-        // find all unfinished outreach locations submitted by the newly selected team lead, so we can add
-        // this team member to the team lead's relevant campaigns
-        logSection( 'Getting unfinished outreach locations, and campaigns associated with Contact' );
-        return \React\Promise\all( array(
-            // get all relevant campaigns
-            getAllSalesforceQueryRecordsAsync( "SELECT Campaign__c FROM TAT_App_Outreach_Location__c WHERE Is_Completed__c = false AND Team_Lead__c = '{$postData->coordinatorId}'" ),
-            // get all campaigns that the user is already part of
-            getAllSalesforceQueryRecordsAsync( "SELECT CampaignId FROM CampaignMember WHERE ContactId = '{$contactID}'" )
-        ))->then( function($responses) use ($contactID, $postData) {
-            $teamLeadsCampaigns = array_map( function($outreachLocation) {
-                return $outreachLocation->Campaign__c;
-            }, $responses[0] );
-            $usersCurrentCampaigns = array_map( function($member) {
-                return $member->CampaignId;
-            }, $responses[1] );
-
-            $campaignsToAddUserTo = array();
-            foreach( $teamLeadsCampaigns as $campaign ) {
-                // if the user isn't already part of this campaign, add it to the array
-                if ( !in_array($campaign, $usersCurrentCampaigns) && !in_array($campaign, $campaignsToAddUserTo) ) {
-                    array_push( $campaignsToAddUserTo, $campaign );
-                }
+        // add the user to the new team lead's campaign, but only if the team lead has exactly one active campaign.
+        // otherwise just silently don't add the user to any campaigns
+        logSection( 'Adding the Contact to the team lead\'s campaign' );
+        return getActiveCampaigns( $postData->coordinatorId )->then( function($campaigns) use ($contactId) {
+            if ( sizeof($campaigns) === 1 ) {
+                return addContactToCampaign( $contactId, $campaigns[0]->Id );
             }
-            
-            // create a CampaignMember linking the contact to each campaign
-            if ( sizeof($campaignsToAddUserTo) == 0 ) {
-                return true;
-            }
-
-            $newCampaignMembers = array_map( function($campaign) use ($contactID) {
-                return array(
-                    'attributes' => array( 'type' => 'CampaignMember' ),
-                    'CampaignId' => $campaign,
-                    'ContactId' => $contactID
-                );
-            }, $campaignsToAddUserTo );
-
-            // send it
-            logSection( 'Creating new CampaignMembers to link the Contact to multiple campaigns' );
-            return salesforceAPIPostAsync( 'composite/sobjects/', array(
-                'allOrNone' => false,
-                'records' => $newCampaignMembers
-            ));
         });
     });
 })->then( function() {

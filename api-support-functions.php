@@ -445,3 +445,31 @@ function getSpecialRegistrationCodes() {
     $regCodes = $fireDatabase->getReference( 'registration-codes' )->getValue();
     return $regCodes;
 }
+
+/**
+ * Returns an Promise which resolves with an array of the active campaigns for a given contactID.
+ * Each array is an object with Id, Name, CreatedDate, EndDate, and IsActive
+ */
+function getActiveCampaigns( $contactId ) {
+    $today = substr( date( 'c' ), 0, 10 );
+    return getAllSalesforceQueryRecordsAsync(
+        "SELECT Id, Name, CreatedDate, EndDate, IsActive FROM Campaign " .
+        "WHERE Id IN (SELECT CampaignId FROM CampaignMember WHERE CampaignMember.ContactId = '{$contactId}') " .
+        "AND IsActive = true AND (EndDate = NULL OR EndDate >= {$today})"
+    );
+}
+
+function addContactToCampaign( $contactId, $campaignId ) {
+    return salesforceAPIPostAsync( 'sobjects/CampaignMember/', array(
+        'CampaignId' => $campaignId,
+        'ContactId' => $contactId
+    ))->otherwise( function($e) {
+        $body = getJsonBodyFromResponse( $e->getResponse() );
+        if ( is_array($body) && sizeof($body) > 0 && $body[0]->errorCode === 'DUPLICATE_VALUE' ) {
+            // do nothing. This is fine. The user was already part of the campaign, which is what we wanted in the first place.
+        } else {
+            // it was some other error that we should pay attention to.
+            throw $e;
+        }
+    });
+}

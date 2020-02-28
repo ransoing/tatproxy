@@ -160,30 +160,31 @@ makeSalesforceRequestWithTokenExpirationCheck( function() use ($code, $sfData) {
             'contactId' => $contactId
         ));
         
-        // if the user is an individual volunteer distributor, add to the volunteer distributor campaign
-        // the user is part of a group if they either are a coordinator, or they have a coordinator
-        if ( $sfData['TAT_App_Volunteer_Type__c'] === 'volunteerDistributor' && !$postData->isCoordinator && empty($postData->coordinatorId) ) {
-            // create a CampaignMember linking the contact to the distributor campaign
-            logSection( 'Adding the Contact to the volunteer distributor campaign' );
-            $config = getConfig();
-            $distributorCampaignId = $config->distributorCampaignId;
-            if ( empty($distributorCampaignId) ) {
-                // no campaign. Don't try to add a Contact to a non-existent campaign.
-                return true;
-            }
-            return salesforceAPIPostAsync( 'sobjects/CampaignMember/', array(
-                'CampaignId' => $distributorCampaignId,
-                'ContactId' => $contactId
-            ))->otherwise( function($e) {
-                $body = getJsonBodyFromResponse( $e->getResponse() );
-                if ( is_array($body) && sizeof($body) > 0 && $body[0]->errorCode === 'DUPLICATE_VALUE' ) {
-                    // do nothing. This is fine. The user was already part of the campaign.
-                } else {
-                    throw $e;
+        // add the user to the appropriate campaign
+        if ( $sfData['TAT_App_Volunteer_Type__c'] === 'volunteerDistributor' ) {
+            // if the user is an individual distributor (if he's not a coordinator and doesn't have a coordinator)
+            if ( !$postData->isCoordinator && empty($postData->coordinatorId) ) {
+                // create a CampaignMember linking the contact to the distributor campaign
+                logSection( 'Adding the Contact to the individual volunteer distributor campaign' );
+                $config = getConfig();
+                // Only add the user to the campaign if we have an ID for it
+                if ( !empty($config->distributorCampaignId) ) {
+                    return addContactToCampaign( $contactId, $config->distributorCampaignId );
                 }
-            });
-        } else {
-            return true;
+            } else if ( !empty($postData->coordinatorId) ) {
+                // get the active campaigns for the user's team lead
+                logSection( 'Adding the Contact to the team lead\'s campaign' );
+                return getActiveCampaigns( $postData->coordinatorId )->then( function($campaigns) use ($contactId) {
+                    // only add the new user to the team lead's campaign if he has exactly one active campaign.
+                    // otherwise just silently don't add the user to any campaigns
+                    if ( sizeof($campaigns) === 1 ) {
+                        return addContactToCampaign( $contactId, $campaigns[0]->Id );
+                    }
+                });
+            }
+        } else if ( $sfData['TAT_App_Volunteer_Type__c'] === 'ambassadorVolunteer' ) {
+            // @@ if the user is an ambassador
+            
         }
     });
 })->otherwise(
