@@ -124,9 +124,24 @@ makeSalesforceRequestWithTokenExpirationCheck( function() use ($code, $sfData) {
             $sfData['TAT_App_Training_Video_Last_Watched_Date__c'] = date('c');
         }
         if ( empty($postData->salesforceId) ) {
+            // no Contact exists for this person. We will add a new Contact.
+            // if the user has a team coordinator, find the owner of that Contact
+            $promiseToGetOwnerId = new \React\Promise\FulfilledPromise( false );
+            if ( !empty($postData->coordinatorId) ) {
+                $promiseToGetOwnerId = salesforceAPIGetAsync(
+                    "sobjects/Contact/{$postData->coordinatorId}/", array( 'fields' => 'OwnerId' )
+                )->then( function($contact) {
+                    return $contact->OwnerId;
+                });
+            }
             // create a new Contact object
             logSection( 'Creating new Contact object' );
-            return salesforceAPIPostAsync( 'sobjects/Contact/', $sfData );
+            return $promiseToGetOwnerId->then( function($ownerId) use ($sfData) {
+                if ( $ownerId ) {
+                    $sfData['OwnerId'] = $ownerId;
+                }
+                return salesforceAPIPostAsync( 'sobjects/Contact/', $sfData );
+            });
         } else {
             // update an existing contact object
             // first, get details on the Contact -- if there is no email or phone, add data to those fields

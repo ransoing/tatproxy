@@ -122,7 +122,7 @@ function promiseToChangeCampaignOpportunity( $campaignId, $numVolunteerHours ) {
  * Also creates a new Contact based on POST fields.
  * @param $postData {object}
  * @param $outreachLocation {object} - an instance of the TAT_App_Outreach_Location__c object in salesforce
- * @param $campaignOnwerId {string} - a string representing the ID of the User in salesforce who should own the new Account and Contact
+ * @param $campaignOwnerId {string} - a string representing the ID of the User in salesforce who should own the new Account and Contact
  * @return - a Promise which resolves with an object that has `accountId` and `contactId` properties
  */
 function promiseToMakeAccountAndContact( $postData, $outreachLocation, $campaignOwnerId ) {

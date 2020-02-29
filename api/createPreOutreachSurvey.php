@@ -37,7 +37,7 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
         logSection( 'Getting info on the Contact' );
         return salesforceAPIGetAsync(
             "sobjects/Contact/{$contactID}/",
-            array( 'fields' => 'MailingAddress,FirstName,LastName' )
+            array( 'fields' => 'MailingAddress,FirstName,LastName,OwnerId' )
         );
     })->then( function($contact) use ($contactID, $postData, $firebaseUid) {
         $promises = array();
@@ -78,6 +78,7 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) use ($postDat
                 'attributes' => array( 'type' => 'TAT_App_Outreach_Location__c' ),
                 'Campaign__c' =>    $postData->campaignId,
                 'Team_Lead__c' =>   $contactID,
+                'OwnerId' =>        $contact->OwnerId,
                 'Name' =>           $location->name,
                 'Type__c' =>        $location->type,
                 'Street__c' =>      $location->street,
