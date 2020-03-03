@@ -111,7 +111,7 @@ $apiFunctions['getUserData']['unfinishedActivities'] = function ( $contactID ) {
                 'Contact_Phone__c',
             );
             
-            $teamCoordinator = $response->TAT_App_Is_Team_Coordinator__c ? $contactID : $response->TAT_App_Team_Coordinator__c;
+            $teamCoordinator = !empty( $response->TAT_App_Team_Coordinator__c ) ? $response->TAT_App_Team_Coordinator__c : $contactID;
             return getAllSalesforceQueryRecordsAsync(
                 "SELECT " . implode(',', $queryFields) . " FROM TAT_App_Outreach_Location__c " .
                 "WHERE Team_Lead__c = '$teamCoordinator' " .

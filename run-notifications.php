@@ -90,7 +90,9 @@ makeSalesforceRequestWithTokenExpirationCheck( function() {
                             if ( !isset($fcmTokens[$devicePrefs->language]) ) {
                                 $fcmTokens[$devicePrefs->language] = array();
                             }
-                            array_push( $fcmTokens[$devicePrefs->language], $token );
+                            if ( $token !== 'Computer dev user' ) {
+                                array_push( $fcmTokens[$devicePrefs->language], $token );
+                            }
                         }
                     }
                 }
