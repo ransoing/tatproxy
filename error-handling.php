@@ -20,8 +20,9 @@ $handleRequestFailure = function( $e ) {
         $message = $e->getMessage();
     }
     if ( !($e instanceof ExpectedException) ) {
+        $instance = ( $_SERVER['HTTP_HOST'] == null ) ? $_SERVER['HTTP_HOST'] : $_SERVER['SERVER_NAME'];
         // this is an unexpected exception. send an email to somebody who wants to know about these
-        $emailBody = "tatproxy encountered an unexpected error while executing some code. See the execution log below."
+        $emailBody = "The tatproxy instance at " . $instance . " encountered an unexpected error while executing some code. See the execution log below."
             . "<br><pre>" . str_replace("\n", "\n<br>", getLog()) . "\n\n<br><br>" . $message . "</pre>";
         forEach( getConfig()->sendErrorsTo as $recipient ) {
             sendMail( $recipient, 'Error during tatproxy execution', $emailBody );

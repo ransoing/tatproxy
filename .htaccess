@@ -17,4 +17,4 @@ Options +MultiViews
 </Files>
 
 # Use PHP 7.1
-AddHandler application/x-httpd-php71 .php
+# AddHandler application/x-httpd-php71 .php
