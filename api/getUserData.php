@@ -145,7 +145,44 @@ $apiFunctions['getUserData']['unfinishedActivities'] = function ( $contactID ) {
             });
 
         } else {
-            // @@TODO
+            // the volunteer is a TAT Ambassador.
+            // Get all Campaign/Events that are active, and have 'TAT Ambassador Event' checked, and that have the user as a member,
+            // and are not completed.
+            $today = substr( date( 'c' ), 0, 10 );
+            $queryFields = array(
+                'Id',
+                'Name',
+                'StartDate',
+                'EndDate',
+                'IsActive',
+                'TAT_Ambassador_Event__c',
+                'TAT_App_Report_Completed__c',
+                'Location_of_Event__c',
+                'State__c'
+            );
+            return getAllSalesforceQueryRecordsAsync(
+                "SELECT " . implode(',', $queryFields) . " FROM Campaign " .
+                "WHERE TAT_App_Report_Completed__c = false " .
+                "AND TAT_Ambassador_Event__c = true " .
+                "AND IsActive = true " .
+                "AND Id IN (SELECT CampaignId FROM CampaignMember WHERE CampaignMember.ContactId = '{$contactID}') " .
+                "AND (EndDate = NULL OR EndDate <= {$today})"
+            )->then( function( $records ) {
+                // convert to a better format
+                $unfinishedEvents = array();
+                foreach( $records as $record ) {
+                    array_push( $unfinishedEvents, (object)array(
+                        'id' => $record->Id,
+                        'name' => $record->Name,
+                        'startDate' => $record->StartDate,
+                        'endDate' => $record->EndDate,
+                        'location' => $record->Location_of_Event__c,
+                        'state' => $record->State__c
+                    ));
+                }
+
+                return array( 'events' => $unfinishedEvents );
+            });
         }
     });
     
@@ -181,7 +218,7 @@ getSalesforceContactID( $firebaseUid )->then( function($contactID) {
         return \React\Promise\all( $promises );
     });
 })->then( function($responses) {
-    // all the request promises return an associative array. When these rpomises resolve, merge the arrays,
+    // all the request promises return an associative array. When these promises resolve, merge the arrays,
     // cast it to an object, convert it to JSON, and echo the output.
     $masterArray = array();
     foreach( $responses as $response ) {

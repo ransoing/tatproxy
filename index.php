@@ -163,6 +163,7 @@ require_once( 'api-support-functions.php' );
 			<li><a href="#createPreOutreachSurvey">createPreOutreachSurvey</a></li>
 			<li><a href="#createPostOutreachReport">createPostOutreachReport</a></li>
 			<li><a href="#deleteOutreachLocation">deleteOutreachLocation</a></li>
+			<li><a href="#createPostEventReport">createPostEventReport</a></li>
 			<li><a href="#updateNotificationPreferences">updateNotificationPreferences</a></li>
 			<li><a href="#unregisterFcmToken">unregisterFcmToken</a></li>
 		</ul>
@@ -551,6 +552,24 @@ Content-Type: application/json
             }
         }, {
             ...
+        }
+    ]
+}</pre>
+
+		<p>
+			The following properties will be included in the returned object, if the user is a Volunteer Ambassador and
+			<code>unfinishedActivities</code> is in the list of parts:
+		</p>
+
+		<pre>{
+    "events": [
+        {
+            "id": {string}, // the identifier of the Salesforce object representing the outreach activity or event activity
+            "name": {string},
+            "startDate": {string (ISO-8601 or YYYY-MM-DD)},
+            "endDate": {string (ISO-8601 or YYYY-MM-DD)},
+            "location": {string},
+            "state": {string}
         }
     ]
 }</pre>
@@ -1057,6 +1076,111 @@ Content-Type: application/json
     "fcmToken": "IOJEHW8nEhehoh",
     "language": "en",
     "reportReminderEnabled": false
+}</pre>
+
+
+		<!-- ==================================== -->
+		<a name="createPostEventReport"></a>
+		<h2>createPostEventReport</h2>
+		<p><b>createPostEventReport</b> adds the data from a post-event report to Salesforce. Many fields are optional, depending on how the user engaged at the event.</p>
+
+		<h3>Make a POST request to:</h3>
+		<pre>/api/createPostEventReport</pre>
+
+		<h3>POST request body payload parameters</h3>
+		<div class="section-wrap">
+			<section>
+				<div>
+					<p><code>firebaseIdToken</code> {string} (required)</p>
+					<p>
+						<a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" target="_blank">A token retrieved
+						from Firebase after the user authenticates</a>, which can be used to identify the user, verify his
+						login state, and access various Firebase resources.
+					</p>
+				</div>
+				<div>
+					<p><code>attendeeQuotes</code> {string}</p>
+					<p>Quotes from attendees at the volunteer's presentation.</p>
+				</div>
+				<div>
+					<p><code>confidence</code> {string}</p>
+					<p>A word or two describing the volunteer's confidence while giving the presentation.</p>
+				</div>
+				<div>
+					<p><code>confidenceHelp</code> {string}</p>
+					<p>Things that the volunteer indicates that TAT staff could do to help the volunteer's confidence.</p>
+				</div>
+				<div>
+					<p><code>confidencePrepared</code> {string}</p>
+					<p>Things that helped the volunteer prepare for the event.</p>
+				</div>
+				<div>
+					<p><code>eventId</code> {string} (required)</p>
+					<p>The ID of a Campaign/Event object in Salesforce.</p>
+				</div>
+				<div>
+					<p><code>howEngaged</code> {string[]} (required)</p>
+					<p>An array of terms describing how the volunteer participated in the event. Valid values are <code>gaveSpeech</code>, <code>hostedTable</code>, <code>interviewedByMedia</code>.</p>
+				</div>
+				<div>
+					<p><code>howEngagedOther</code> {string}</p>
+					<p>Custom info describing how the volunteer participated.</p>
+				</div>
+				<div>
+					<p><code>movedAudience</code> {string}</p>
+					<p>A description of how audience members were moved by the volunteer's presentation.</p>
+				</div>
+				<div>
+					<p><code>numAttendedEvent</code> {number}</p>
+					<p>An estimated number of people who attended the event.</p>
+				</div>
+				<div>
+					<p><code>numAttendedPresentation</code> {number}</p>
+					<p>The number of people who attended the volunteer's presentation.</p>
+				</div>
+				<div>
+					<p><code>other</code> {string}</p>
+					<p>Any comments that the volunteer has for TAT which are not covered by the other questions.</p>
+				</div>
+				<div>
+					<p><code>pressMembers</code> {string}</p>
+					<p>A description of members of the press that were at the event.</p>
+				</div>
+				<div>
+					<p><code>volunteerQuote</code> {string}</p>
+					<p>A quote from the volunteer on their experience.</p>
+				</div>
+				<div>
+					<p><code>whatDidntGoWell</code> {string}</p>
+					<p>What didn't go well for the volunteer at the event.</p>
+				</div>
+				<div>
+					<p><code>whatWentWell</code> {string}</p>
+					<p>What went well for the volunteer at the event.</p>
+				</div>
+			</section>
+		</div>
+		
+		<h3>Response payload</h3>
+		<pre>{
+    success: true
+}</pre>
+
+		<h3>Example request</h3>
+		<pre>// URL:
+POST /api/createPostEventReport
+
+// Headers:
+Content-Type: application/json
+
+// Request body:
+{
+    "firebaseIdToken": "abcd1234",
+    "eventId": "IOJEHW8nEhehoh",
+    "confidence": "medium",
+    "howEngaged": ["gaveSpeech", "hostedTable"],
+    "numAttendedEvent": 300,
+    "numAttendedPresentation": 24
 }</pre>
 
 

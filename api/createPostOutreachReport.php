@@ -210,25 +210,6 @@ function promiseToMakeAccountAndContact( $postData, $outreachLocation, $campaign
 
 
 /**
- * Gets the owner of a campaign, as a User salesforce object.
- * @param $campaignId {string} - salesforce Campaign object ID
- * @return - a Promise which resolves with an object that has properties `Username` and `Id`. The "username" is actually an email address.
- */
-function promiseToGetCampaignOwner( $campaignId ) {
-    logSection( 'Getting owner of campaign' );
-    return getAllSalesforceQueryRecordsAsync(
-        "SELECT Username, Id FROM User WHERE Id IN (SELECT OwnerId FROM Campaign WHERE Campaign.Id = '{$campaignId}')"
-    )->then( function($records) {
-        if ( sizeof($records) === 0 ) {
-            // not an expected exception
-            throw new Exception( 'Failed to get campaign owner.\n' . json_encode($records) );
-        }
-        return $records[0];
-    });
-}
-
-
-/**
  * Creates multiple new Opportunities in salesforce, based on the reported accomplishments.
  * @param $accountId {string} - salesforce Account object ID, representing the Account for the location visited
  * @param $contactId {string} - salesforce Contact object ID, representing the primary Contact for the location visited
